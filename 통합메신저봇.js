@@ -29,9 +29,9 @@ function onMessage(msg)
         if (message.startsWith('.') == false && message.trim())
         {
             if (message.includes("사진을 보냈습니다."))
-            {
                 return;
-            }
+            if (message.includes("이모티콘을 보냈습니다."))
+                return;
             else if (message.includes("보이스룸이 방금 시작했어요."))
                 voiceRoomStart(msg, sender);
             else if (message.includes("보이스룸 종료 "))
@@ -76,7 +76,7 @@ function onCommand(msg)
         else if (command === "소개")
             getPersonalStatement(msg, args);
         else if (command === "자기소개")
-            getSelfPersonalStatement(msg, sender, args);
+            getSelfPersonalStatement(msg, sender);
         else if (command === "전체자소서")
             getAllPersonalStatement(msg, userHash);
         else if (command === "상태" || command === "막내상태")
@@ -100,7 +100,17 @@ function onCommand(msg)
         else if (command === "ㅈㅅ")
             getPersonalStatementFormat(msg);
         else if (command === "?" || command === "ㅁㄹ" || command === "명령" || command === "명령어")
-            getCommandList(msg);
+            getCommandList(msg, room);
+        else if (content.includes("포인트") && content.includes("사용"))
+            usePoint(room, msg, sender, userHash, args);
+        else if (command === "전체포인트")
+            getPointList(room, msg, userHash);
+        else if (command === "다른방테스트")
+        {
+            bot.send("4050반말 it 실험실", "안녕 서락이가 너희에게");
+            bot.send("운영진방", "안녕 서락이가 너희에게");
+            bot.send("DEBUG ROOM", "안녕 서락이가 너희에게");
+        }
     }
     catch (e)
     {
@@ -257,7 +267,7 @@ function earnPoint(room, msg, sender, userHash, point)
     fs.write(chatPointPath, JSON.stringify(chatPointList));
 }
 
-function usePoint(room, msg, sender, userHash, point)
+function usePoint(room, msg, userHash)
 {
     if (checkAdmin(userHash) == false)
         return;
@@ -265,15 +275,35 @@ function usePoint(room, msg, sender, userHash, point)
     fileCheck(chatPointPath);
 
     var chatPointList = JSON.parse(fs.read(chatPointPath));
-    var chatPointIndex = chatPointList.findIndex(n => n.room === room && n.userHash === userHash);
+
+    var name = content.replace(".포인트", "").split("사용")[0].trim();
+
+    if (!name)
+        return;
+
+    var point = Number(content.replace(".포인트", "").replace(name, "").replace("사용", "").trim());
+
+    if (point < 1)
+        return;
+
+    var chatPointIndex = chatPointList.findIndex(n => n.room === room && n.name === name);
 
     if (chatPointIndex > -1)
     {
-        chatPointList[chatPointIndex].point -= point;
-        msg.reply(sender + " 포인트 사용 : " + point + ", 현재 포인트 : " + chatPointList[chatPointIndex].point);
-    }
+        var currentPoint = chatPointList[chatPointIndex].point;
 
-    fs.write(chatPointPath, JSON.stringify(chatPointList));
+        if ((currentPoint - point) > 0)
+        {
+            chatPointList[chatPointIndex].point -= point;
+            msg.reply(chatPointList[chatPointIndex].name + "의 포인트 (" + point + ") 을 사용, 남은 포인트 : " + chatPointList[chatPointIndex].point);
+
+            fs.write(chatPointPath, JSON.stringify(chatPointList));
+        }
+        else
+        {
+            msg.reply("포인트가 모잘라! \n현재 포인트 : " + chatPointList[chatPointIndex].point + ", 사용하고자 하는 포인트 : " + point);
+        }
+    }
 }
 
 function getPointList(room, msg, userHash)
@@ -583,7 +613,7 @@ function getPersonalStatement(msg, arg)
     }
 }
 
-function getSelfPersonalStatement(msg, name, arg)
+function getSelfPersonalStatement(msg, name)
 {
     try
     {
@@ -610,6 +640,11 @@ function getAllPersonalStatement(msg, userHash)
 
     var personalStatementList = JSON.parse(fs.read(personalStatementPath));
     var returnpersonalStatementList = "";
+
+    personalStatementList.sort(function(a, b) 
+    {
+        return a.name - b.name
+    });
 
     for (var i in personalStatementList)
     {
