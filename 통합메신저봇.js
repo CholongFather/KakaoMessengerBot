@@ -17,7 +17,6 @@ var offset = 1000 * 60 * 60 * 1;
 var room = [];
 
 //메세지 왔을 경우
-
 function onMessage(msg)
 {
     try
@@ -76,6 +75,10 @@ function onCommand(msg)
             deletePersonalStatement(msg, content, userHash);
         else if (command === "소개")
             getPersonalStatement(msg, args);
+        else if (command === "자기소개")
+            getSelfPersonalStatement(msg, sender, args);
+        else if (command === "전체자소서")
+            getAllPersonalStatement(msg, userHash);
         else if (command === "상태" || command === "막내상태")
             getPhoneStatus(msg, userHash, room);
         else if (command === "실검" || command === "실검순위")
@@ -180,23 +183,13 @@ function trimLastSpace(text)
 //보이스룸 시작 알림
 function voiceRoomStart(msg, sender)
 {
-    if (sender.endsWith("남"))
-        msg.reply(sender + "이 보이스룸 시작.");
-    else if (sender.endsWith("여"))
-        msg.reply(sender + "가 보이스룸 시작.");
-    else
-        msg.reply(sender + "이(가) 보이스룸 시작.");
+    msg.reply(sender + (hasFinalConsonant(sender) ? "이" : "가") + " 보이스룸 시작.");
 }
 
 //보이스룸 종료 알림
 function voiceRoomEnd(msg, sender)
 {
-    if (sender.endsWith("남"))
-        msg.reply(sender + "이 보이스룸 종료.");
-    else if (sender.endsWith("여"))
-        msg.reply(sender + "가 보이스룸 종료.");
-    else
-        msg.reply(sender + "이(가) 보이스룸 종료.");
+    msg.reply(sender + (hasFinalConsonant(sender) ? "이" : "가") + " 보이스룸 종료.");
 }
 
 //입장 감지 인사
@@ -204,13 +197,6 @@ function newUserGreet(msg)
 {
     msg.reply("친구야 어서와~ ♥");
     setTimeout(() => msg.reply("인사 하고 닉변도 해줘~"), 4000);
-}
-
-//자소서 양식
-function getPersonalStatementFormat(msg)
-{
-    var personalStatementFormat = "1. 닉네임 : \n2. 성별 : \n3. 거주지 : \n4. 기미돌 : ";
-    msg.reply(personalStatementFormat);
 }
 
 //도움말 목록
@@ -224,13 +210,23 @@ function getCommandList(msg)
     commandList += "실시간 검색어 : .실검, .실검 순위\n";
     commandList += "운세 : .ㅇㅅ, .운세\n";
     commandList += "자소서 보기 : .소개 (닉네임 ex. 서락 남)\n";
-    commandList += "자소서 양식 : .ㅈㅅ\n";
+    commandList += "자기 자소서 보기 : .자기소개\n";
     commandList += "채팅 순위 보기 : .채팅, .채팅순위\n";
     commandList += "출석부 보기 : .출석부\n";
     commandList += "존대 규칙 : .존대";
 
     msg.reply(commandList);
 }
+
+function hasFinalConsonant(str)
+{
+    if (!str) 
+        return false;
+    
+    const lastCharCode = str.charCodeAt(str.length - 1);
+
+    return (lastCharCode - 44032) % 28;
+};
 
 //포인트 획득 함수
 function earnPoint(room, msg, sender, userHash, point)
@@ -242,6 +238,7 @@ function earnPoint(room, msg, sender, userHash, point)
     if (chatPointIndex > -1)
     {
         chatPointList[chatPointIndex].point += point;
+        chatPointList[chatPointIndex].name = sender;
         msg.reply(sender + " 포인트 획득 : " + point + ", 현재 포인트 : " + chatPointList[chatPointIndex].point);
     }
     else
@@ -250,10 +247,59 @@ function earnPoint(room, msg, sender, userHash, point)
         {
             'room': room,
             'userHash': userHash,
+            'name' : sender,
             'point': point
         });
 
         msg.reply(sender + " 포인트 획득 : " + point + ", 현재 포인트 : " + point);
+    }
+
+    fs.write(chatPointPath, JSON.stringify(chatPointList));
+}
+
+function usePoint(room, msg, sender, userHash, point)
+{
+    if (checkAdmin(userHash) == false)
+        return;
+
+    fileCheck(chatPointPath);
+
+    var chatPointList = JSON.parse(fs.read(chatPointPath));
+    var chatPointIndex = chatPointList.findIndex(n => n.room === room && n.userHash === userHash);
+
+    if (chatPointIndex > -1)
+    {
+        chatPointList[chatPointIndex].point -= point;
+        msg.reply(sender + " 포인트 사용 : " + point + ", 현재 포인트 : " + chatPointList[chatPointIndex].point);
+    }
+
+    fs.write(chatPointPath, JSON.stringify(chatPointList));
+}
+
+function getPointList(room, msg, userHash)
+{
+    if (checkAdmin(userHash) == false)
+        return;
+    
+    fileCheck(chatPointPath);
+
+    var chatPointList = JSON.parse(fs.read(chatPointPath));
+    var chatPointListByRoom = chatPointList.filter(n => n.room === room);
+
+    if (!chatPointListByRoom)
+    {
+        var returnchatPointListByRoom = "";
+
+        for (var i in chatPointListByRoom)
+        {
+            returnchatPointListByRoom += chatPointListByRoom[i].name + " : " + chatPointListByRoom[i].point + "\n";
+        }
+
+        msg.reply("전체 포인트 리스트 : \n" + returnchatPointListByRoom);
+    }
+    else
+    {
+        msg.reply("포인트 목록이 없어");
     }
 
     fs.write(chatPointPath, JSON.stringify(chatPointList));
@@ -309,7 +355,7 @@ function fileReset(msg, args, userHash)
     else if (args[0] == '채팅순위')
     {
         fs.write(chatCountPath, JSON.stringify([]));
-        fs.write(chatStartPath, JSON.stringify([]))
+        fs.write(chatStartPath, JSON.stringify([]));
         msg.reply('채팅순위 초기화 완료');
     }
     else if (args[0] == '운세')
@@ -520,9 +566,12 @@ function getPersonalStatement(msg, arg)
     try
     {
         fileCheck(personalStatementPath);
+
         var name = arg.join(' ').trim();
+
         if (!name)
             return;
+
         var personalStatementList = JSON.parse(fs.read(personalStatementPath));
         var i = personalStatementList.findIndex(n => n.name === name);
         msg.reply(personalStatementList[i].name + "의 자소서\n" + personalStatementList[i].content + " \n저장 시간 : " + personalStatementList[i].time);
@@ -530,8 +579,44 @@ function getPersonalStatement(msg, arg)
     catch (e)
     {
         msg.reply("미안 자소서 내용을 모르겠어.");
-        Log.error(e);
+        Log.warn("자소서 불러오기 오류 : " + e);
     }
+}
+
+function getSelfPersonalStatement(msg, name, arg)
+{
+    try
+    {
+        fileCheck(personalStatementPath);
+
+        var personalStatementList = JSON.parse(fs.read(personalStatementPath));
+        var i = personalStatementList.findIndex(n => n.name === name);
+
+        msg.reply(personalStatementList[i].name + "의 자소서\n" + personalStatementList[i].content + " \n저장 시간 : " + personalStatementList[i].time);
+    }
+    catch (e)
+    {
+        msg.reply("미안 자소서 내용을 모르겠어.");
+        Log.warn("자소서 불러오기 오류 : " + e);
+    }
+}
+
+function getAllPersonalStatement(msg, userHash)
+{
+    if (checkAdmin(userHash) == false)
+        return;
+
+    fileCheck(personalStatementPath);
+
+    var personalStatementList = JSON.parse(fs.read(personalStatementPath));
+    var returnpersonalStatementList = "";
+
+    for (var i in personalStatementList)
+    {
+        returnpersonalStatementList += personalStatementList[i].name  + "\n" + personalStatementList[i].content + "\n" + personalStatementList[i].time + "\n\n";
+    }
+
+    msg.reply(returnpersonalStatementList);
 }
 
 function diceGame(msg, args)
