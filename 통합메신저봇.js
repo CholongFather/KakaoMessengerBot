@@ -322,27 +322,27 @@ function getPointList(room, msg, userHash)
 
     if (chatPointListByRoom.length === 0)
     {
-        var returnchatPointListByRoom = "";
+        var chatPointListByRoomReply = "전체 포인트 리스트 : \n";
 
         for (var i in chatPointListByRoom)
         {
-            returnchatPointListByRoom += chatPointListByRoom[i].name + " : " + chatPointListByRoom[i].point + "\n";
+            chatPointListByRoomReply += chatPointListByRoom[i].name + " : " + chatPointListByRoom[i].point + "\n";
         }
 
-        msg.reply("전체 포인트 리스트 : \n" + returnchatPointListByRoom);
+        msg.reply(chatPointListByRoomReply);
     }
     else
     {
         msg.reply("포인트 목록이 이 방에는 없어 : " + room);
 
-        var returnchatPointListByRoom = "";
+        var chatPointListByRoomReply = "전체 포인트 리스트 : \n";
 
         for (var i in chatPointList)
         {
-            returnchatPointListByRoom += chatPointList[i].room + " " + chatPointList[i].name + " : " + chatPointList[i].point + "\n";
+            chatPointListByRoomReply += chatPointList[i].room + " " + chatPointList[i].name + " : " + chatPointList[i].point + "\n";
         }
 
-        msg.reply("전체 포인트 리스트 : \n" + returnchatPointListByRoom);
+        msg.reply(chatPointListByRoomReply);
     }
 
     fs.write(chatPointPath, JSON.stringify(chatPointList));
@@ -600,6 +600,7 @@ function deletePersonalStatement(msg, content, userHash)
 
     if (i > -1)
         personalStatementList.splice(i, 1);
+
     fs.write(personalStatementPath, JSON.stringify(personalStatementList));
     msg.reply("삭제 완료");
 }
