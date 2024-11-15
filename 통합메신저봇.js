@@ -102,15 +102,19 @@ function onCommand(msg)
         else if (command === "?" || command === "ㅁㄹ" || command === "명령" || command === "명령어")
             getCommandList(msg, room);
         else if (content.includes("포인트") && content.includes("사용"))
-            usePoint(room, msg, sender, userHash, args);
+            usePoint(room, msg, userHash);
         else if (command === "전체포인트")
             getPointList(room, msg, userHash);
         else if (command === "다른방테스트")
         {
-            bot.send("4050반말 it 실험실", "안녕 서락이가 너희에게");
-            bot.send("운영진방", "안녕 서락이가 너희에게");
-            bot.send("DEBUG ROOM", "안녕 서락이가 너희에게");
+            if (bot.canReply("4050반말 it 실험실"))
+            {
+                msg.reply("분부대로 하겠습니다.");
+                bot.send("4050반말 it 실험실", "안녕 서락이가 너희에게");
+            }
         }
+        else if (command === "방이름")
+            msg.reply("현재 방 이름 : " + msg.room);
     }
     catch (e)
     {
@@ -316,7 +320,7 @@ function getPointList(room, msg, userHash)
     var chatPointList = JSON.parse(fs.read(chatPointPath));
     var chatPointListByRoom = chatPointList.filter(n => n.room === room);
 
-    if (!chatPointListByRoom)
+    if (chatPointListByRoom.length === 0)
     {
         var returnchatPointListByRoom = "";
 
@@ -329,7 +333,16 @@ function getPointList(room, msg, userHash)
     }
     else
     {
-        msg.reply("포인트 목록이 없어");
+        msg.reply("포인트 목록이 이 방에는 없어 : " + room);
+
+        var returnchatPointListByRoom = "";
+
+        for (var i in chatPointList)
+        {
+            returnchatPointListByRoom += chatPointList[i].room + " " + chatPointList[i].name + " : " + chatPointList[i].point + "\n";
+        }
+
+        msg.reply("전체 포인트 리스트 : \n" + returnchatPointListByRoom);
     }
 
     fs.write(chatPointPath, JSON.stringify(chatPointList));
@@ -609,7 +622,7 @@ function getPersonalStatement(msg, arg)
     catch (e)
     {
         msg.reply("미안 자소서 내용을 모르겠어.");
-        Log.warn("자소서 불러오기 오류 : " + e);
+        Log.info("자소서 불러오기 오류 : " + e);
     }
 }
 
@@ -627,7 +640,7 @@ function getSelfPersonalStatement(msg, name)
     catch (e)
     {
         msg.reply("미안 자소서 내용을 모르겠어.");
-        Log.warn("자소서 불러오기 오류 : " + e);
+        Log.info("자소서 불러오기 오류 : " + e);
     }
 }
 
