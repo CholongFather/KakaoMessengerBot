@@ -56,7 +56,10 @@ function onMessage(msg)
           if (userHashList[idx].comment)
             returnMessage += "\n코멘트 : " + userHashList[idx].comment;
 
-          msg.reply(returnMessage);
+          if (bot.canReply("운영진방"))
+            bot.send("운영진방", returnMessage);
+          else
+            msg.reply(returnMessage);
 
           userHashList[idx].userName = currentName;
           userHashList[idx].date = today() + ' ' + time();
@@ -84,22 +87,7 @@ function onCommand(msg)
     var message = msg.content;
     var command = msg.command;
 
-    if (command === "유저해시")
-    {
-      var userHashs = JSON.parse(fs.read(userHashPaths));
-      
-      for (var i in userHashs)
-      {
-          msg.reply(userHashs[i].userName + " : " + userHashs[i].userHash);
-      }
-    }
-    else if (command == "파일")
-    {
-      var rawUserHashFile = fs.read(userHashPaths);
-
-      msg.reply(rawUserHashFile);
-    }
-    else if (message.includes("코멘트") && message.includes("저장"))
+    if (message.includes("코멘트") && message.includes("저장"))
     {
       var name = message.replace(".코멘트", "").split("저장")[0].trim();
 

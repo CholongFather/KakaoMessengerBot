@@ -14,7 +14,11 @@ var upDownMax = 1000;
 var upDownUser = "";
 var zodiac = ["쥐띠", "소띠", "호랑이띠", "토끼띠", "용띠", "뱀띠", "말띠", "양띠", "원숭이띠", "닭띠", "개띠", "돼지띠"];
 var offset = 1000 * 60 * 60 * 1;
-var room = [];
+var mainRoomName = "name";
+
+//1843311789 : it방
+//1843374958 : 메인
+//모름 : 운영진방
 
 //메세지 왔을 경우
 function onMessage(msg)
@@ -22,28 +26,35 @@ function onMessage(msg)
     try
     {
         var message = msg.content;
-        var room = msg.channelId.toString().substring(0, 10);
+        var roomId = msg.channelId.toString().substring(0, 10);
         var sender = msg.author.name;
         var userHash = msg.author.hash;
+        var roomName = msg.room;
 
-        if (message.startsWith('.') == false && message.trim())
+        //이사가면 바꿀것...
+        if (roomId === "1843374958")
         {
-            if (message.includes("사진을 보냈습니다."))
-                return;
-            if (message.includes("이모티콘을 보냈습니다."))
-                return;
-            else if (message.includes("보이스룸이 방금 시작했어요."))
-                voiceRoomStart(msg, sender);
-            else if (message.includes("보이스룸 종료 "))
-                voiceRoomEnd(msg, sender);
-            else if (message.includes("새 칭구 환영하자규"))
-                newUserGreet(msg);
-            else if (message.includes("vs"))
-                pickVersusText(msg);
-            else
+            mainRoomName = roomName;
+
+            if (message.startsWith('.') == false && message.trim())
             {
-                attendance(msg, room, sender, userHash, date(0), date(-1), time());
-                messageCount(room, sender, userHash, msg);
+                if (message.includes("사진을 보냈습니다."))
+                    return;
+                else if (message.includes("이모티콘을 보냈습니다."))
+                    return;
+                else if (message.includes("보이스룸이 방금 시작했어요."))
+                    voiceRoomStart(msg, sender);
+                else if (message.includes("보이스룸 종료 "))
+                    voiceRoomEnd(msg, sender);
+                else if (message.includes("새 칭구 환영하자규"))
+                    newUserGreet(msg);
+                else if (message.includes("vs"))
+                    pickVersusText(msg);
+                else
+                {
+                    attendance(msg, room, sender, userHash, date(0), date(-1), time());
+                    messageCount(room, sender, userHash, msg);
+                }
             }
         }
     }
@@ -62,13 +73,14 @@ function onCommand(msg)
         var args = msg.args;
         var userHash = msg.author.hash;
         var content = msg.content;
-        var room = msg.channelId.toString().substring(0, 10);
+        var roomId = msg.channelId.toString().substring(0, 10);
+        var roomName = msg.room;
         var sender = msg.author.name;
 
         if (command === "출석부")
-            attendanceRegisterList(msg, room, date(0));
+            attendanceRegisterList(msg, roomId, date(0));
         else if (command === "채팅" || command === "채팅순위")
-            messageCountRank(room, msg);
+            messageCountRank(roomId, msg);
         else if (content.includes("자소서") && content.includes("저장"))
             savePersonalStatement(msg, content, userHash);
         else if (content.includes("자소서") && content.includes("삭제"))
@@ -78,15 +90,15 @@ function onCommand(msg)
         else if (command === "자기소개")
             getSelfPersonalStatement(msg, sender);
         else if (command === "전체자소서")
-            getAllPersonalStatement(msg, userHash);
+            getAllPersonalStatement(msg, roomName);
         else if (command === "상태" || command === "막내상태")
-            getPhoneStatus(msg, userHash, room);
+            getPhoneStatus(msg, userHash, roomId);
         else if (command === "실검" || command === "실검순위")
             getSearchWord(msg);
         else if (command === "초기화")
             fileReset(msg, args, userHash);
         else if (command === "ㅇ" || command === "업다운")
-            upDownGame(msg, args, sender, room);
+            upDownGame(msg, args, sender, roomId);
         else if (command === "ㅈ" || command === "주사위")
             diceGame(msg, args);
         else if (command === "존대")
@@ -95,26 +107,24 @@ function onCommand(msg)
             coinFlipGame(msg);
         else if (command === "ㅇㅅ" || command === "운세")
             getAllZodiacFortuneTeller(msg, args);
-        else if (command === "유저" || command === "유저해시")
-            getUserHashs(msg);
-        else if (command === "ㅈㅅ")
-            getPersonalStatementFormat(msg);
         else if (command === "?" || command === "ㅁㄹ" || command === "명령" || command === "명령어")
-            getCommandList(msg, room);
+            getCommandList(msg);
         else if (content.includes("포인트") && content.includes("사용"))
-            usePoint(room, msg, userHash);
+            usePoint(roomId, msg, userHash);
         else if (command === "전체포인트")
-            getPointList(room, msg, userHash);
-        else if (command === "다른방테스트")
+            getPointList(roomId, msg, roomName);
+        else if (command === "방이름")
+            msg.reply("우리 방 이름 : " + roomName);
+        else if (command === "방번호")
+            msg.reply("우리 방 번호 : " + roomId)
+        else if (command === "ㄱㅈ" || command === "공지")
         {
-            if (bot.canReply("4050반말 it 실험실"))
+            if (roomId !== "1843374958")
             {
-                msg.reply("분부대로 하겠습니다.");
-                bot.send("4050반말 it 실험실", "안녕 서락이가 너희에게");
+                if (bot.canReply(mainRoomName))
+                    bot.send(mainRoomName, content.replace(".공지", "").replace(".ㄱㅈ", ""));
             }
         }
-        else if (command === "방이름")
-            msg.reply("현재 방 이름 : " + msg.room);
     }
     catch (e)
     {
@@ -122,20 +132,20 @@ function onCommand(msg)
     }
 }
 
-//관리자 판별 함수
+//관리자 판별 함수, 방이름으로 변경 중
 function checkAdmin(userHash)
 {
     switch (userHash)
     {
         //디버깅 시
         case "DEBUG ROOM":
-            return true;
             //베리
         case "34b810178e0d1f25e8d733652dfe86218d40018bea5a9779c74f02401daaa438":
         case "3a596a81ba44989915f2a7ba06ea7f7f1a9ab05b7c284388b4be049f6a21d6c9":
             //서락 남
         case "b57042c03b7701d7bf427a6ee810f16f36d305d8024c5abb82a61875e8a8ab4e":
         case "5c2e2cd9c86c3f8b135bd81f1dfba1f66ced64843d0803a7e214b4666568de69":
+        case "운영진방":
             return true;
         default:
             return false;
@@ -213,25 +223,6 @@ function newUserGreet(msg)
     setTimeout(() => msg.reply("인사 하고 닉변도 해줘~"), 4000);
 }
 
-//도움말 목록
-function getCommandList(msg)
-{
-    var commandList = "나의 명령어 목록 \n -------------------------- \n";
-
-    commandList += "동전 던지기 : .ㄷ, .동전\n";
-    commandList += "업다운 게임 : .ㅇ 시작, .업다운 시작, .종료, .업다운 종료, .ㅇ (숫자), .업다운 (숫자)\n";
-    commandList += "주사위 던지기 : .ㅈ, .주사위 (+ 숫자)\n";
-    commandList += "실시간 검색어 : .실검, .실검 순위\n";
-    commandList += "운세 : .ㅇㅅ, .운세\n";
-    commandList += "자소서 보기 : .소개 (닉네임 ex. 서락 남)\n";
-    commandList += "자기 자소서 보기 : .자기소개\n";
-    commandList += "채팅 순위 보기 : .채팅, .채팅순위\n";
-    commandList += "출석부 보기 : .출석부\n";
-    commandList += "존대 규칙 : .존대";
-
-    msg.reply(commandList);
-}
-
 function hasFinalConsonant(str)
 {
     if (!str) 
@@ -241,6 +232,33 @@ function hasFinalConsonant(str)
 
     return (lastCharCode - 44032) % 28;
 };
+
+//도움말 목록
+function getCommandList(msg)
+{
+    var commandList = "나의 명령어 목록 \n -------------------------- \n";
+
+    commandList += "실시간 검색어 : .실검, .실검 순위\n";
+    commandList += "운세 : .ㅇㅅ, .운세\n";
+    commandList += "자소서 보기 : .소개 (닉네임 ex. 서락 남)\n";
+    commandList += "자기 자소서 보기 : .자기소개\n";
+    commandList += "채팅 순위 보기 : .채팅, .채팅순위\n";
+    commandList += "출석부 보기 : .출석부\n";
+    commandList += "존대 규칙 : .존대";
+    commandList += "동전 던지기 : .ㄷ, .동전\n";
+    commandList += "업다운 게임 : .ㅇ 시작, .업다운 시작, .종료, .업다운 종료, .ㅇ (숫자), .업다운 (숫자)\n";
+    commandList += "주사위 던지기 : .ㅈ, .주사위 (+ 숫자)\n";
+    commandList += "방 이름 확인 : .방이름";
+
+    msg.reply(commandList);
+}
+
+function getAdminCommandList(msg)
+{
+    var commandList = "운영진방 명령어 목록 \n -------------------------- \n";
+
+    msg.reply(commandList);
+}
 
 //포인트 획득 함수
 function earnPoint(room, msg, sender, userHash, point)
@@ -310,9 +328,9 @@ function usePoint(room, msg, userHash)
     }
 }
 
-function getPointList(room, msg, userHash)
+function getPointList(room, msg, roomName)
 {
-    if (checkAdmin(userHash) == false)
+    if (checkAdmin(roomName) == false)
         return;
     
     fileCheck(chatPointPath);
@@ -547,6 +565,8 @@ function messageCountRank(room, msg)
     msg.reply(chatRankResponse);
 }
 
+var duplicateSavePersonalStatement = false;
+
 function savePersonalStatement(msg, content, userHash)
 {
     if (checkAdmin(userHash) == false)
@@ -575,9 +595,23 @@ function savePersonalStatement(msg, content, userHash)
     }
     else
     {
-        personalStatementList[personalStatementList.findIndex(n => n.name === name)].content = body;
-        personalStatementList[personalStatementList.findIndex(n => n.name === name)].time = date(0) + " " + time();
-        msg.reply("덮어씌우기 완료");
+        if (duplicateSavePersonalStatement === false)
+        {
+            msg.reply("이미 있는 자소서야 덮어 씌우길 원해? 덮어씌우려면 10초안에 다시 입력 해줘");
+            duplicateSavePersonalStatement = true;
+
+            setTimeout(() => duplicateSavePersonalStatement = false, 10000);
+            return;
+        }
+
+        if (duplicateSavePersonalStatement)
+        {
+            personalStatementList[personalStatementList.findIndex(n => n.name === name)].content = body;
+            personalStatementList[personalStatementList.findIndex(n => n.name === name)].time = date(0) + " " + time();
+            msg.reply("덮어씌우기 완료");
+
+            duplicateSavePersonalStatement = false;
+        }
     }
 
     fs.write(personalStatementPath, JSON.stringify(personalStatementList));
@@ -645,9 +679,10 @@ function getSelfPersonalStatement(msg, name)
     }
 }
 
-function getAllPersonalStatement(msg, userHash)
+//전체 자소서 목록
+function getAllPersonalStatement(msg, roomName)
 {
-    if (checkAdmin(userHash) == false)
+    if (checkAdmin(roomName) == false)
         return;
 
     fileCheck(personalStatementPath);
@@ -668,6 +703,7 @@ function getAllPersonalStatement(msg, userHash)
     msg.reply(returnpersonalStatementList);
 }
 
+//주사위 게임
 function diceGame(msg, args)
 {
     var max = 6;    
@@ -680,12 +716,14 @@ function diceGame(msg, args)
     msg.reply("주사위 결과 : " + (Math.floor(Math.random() * max) + 1));
 }
 
+//동전 뒤집기
 function coinFlipGame(msg)
 {
     var coin = ["앞이", "뒤가"][Math.floor(Math.random() * 2)];
     msg.reply(coin + " 나왔다!");
 }
 
+//업다운 게임
 function upDownGame(msg, args, sender, room)
 {
     if (args[0] === "시작")
@@ -736,6 +774,7 @@ function upDownGame(msg, args, sender, room)
     }
 }
 
+//네이버 운세 가져오기
 function getFortuneTeller(name)
 {
     try
