@@ -52,8 +52,8 @@ function onMessage(msg)
                     pickVersusText(msg);
                 else
                 {
-                    attendance(msg, room, sender, userHash, date(0), date(-1), time());
-                    messageCount(room, sender, userHash, msg);
+                    attendance(msg, roomId, sender, userHash, date(0), date(-1), time());
+                    messageCount(roomId, sender, userHash, msg);
                 }
             }
         }
@@ -116,7 +116,7 @@ function onCommand(msg)
         else if (command === "방이름")
             msg.reply("우리 방 이름 : " + roomName);
         else if (command === "방번호")
-            msg.reply("우리 방 번호 : " + roomId)
+            msg.reply("우리 방 번호 : " + roomId);
         else if (command === "ㄱㅈ" || command === "공지")
         {
             if (roomId !== "1843374958")
@@ -328,36 +328,25 @@ function usePoint(room, msg, userHash)
     }
 }
 
-function getPointList(room, msg, roomName)
+function getPointList(roomId, msg, roomName)
 {
     if (checkAdmin(roomName) == false)
         return;
     
+    //임시
+    roomId = "1843374958";
+
     fileCheck(chatPointPath);
 
     var chatPointList = JSON.parse(fs.read(chatPointPath));
-    var chatPointListByRoom = chatPointList.filter(n => n.room === room);
+    var chatPointListByRoom = chatPointList.filter(n => n.room === roomId);
+    var chatPointListByRoomReply = "전체 포인트 리스트 : \n";
 
-    if (chatPointListByRoom.length === 0)
+    if (chatPointListByRoom.length !== 0)
     {
-        var chatPointListByRoomReply = "전체 포인트 리스트 : \n";
-
         for (var i in chatPointListByRoom)
         {
             chatPointListByRoomReply += chatPointListByRoom[i].name + " : " + chatPointListByRoom[i].point + "\n";
-        }
-
-        msg.reply(chatPointListByRoomReply);
-    }
-    else
-    {
-        msg.reply("포인트 목록이 이 방에는 없어 : " + room);
-
-        var chatPointListByRoomReply = "전체 포인트 리스트 : \n";
-
-        for (var i in chatPointList)
-        {
-            chatPointListByRoomReply += chatPointList[i].room + " " + chatPointList[i].name + " : " + chatPointList[i].point + "\n";
         }
 
         msg.reply(chatPointListByRoomReply);
@@ -692,7 +681,7 @@ function getAllPersonalStatement(msg, roomName)
 
     personalStatementList.sort(function(a, b) 
     {
-        return a.name - b.name
+        return a.name - b.name;
     });
 
     for (var i in personalStatementList)
