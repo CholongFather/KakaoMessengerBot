@@ -18,7 +18,7 @@ var mainRoomName = "name";
 
 //1843311789 : it방
 //1843374958 : 메인
-//모름 : 운영진방
+//1843176468 : 운영진방
 
 //메세지 왔을 경우
 function onMessage(msg)
@@ -119,10 +119,10 @@ function onCommand(msg)
             msg.reply("우리 방 번호 : " + roomId);
         else if (command === "ㄱㅈ" || command === "공지")
         {
-            if (roomId !== "1843374958")
+            if (roomId === "1843176468")
             {
                 if (bot.canReply(mainRoomName))
-                    bot.send(mainRoomName, content.replace(".공지", "").replace(".ㄱㅈ", ""));
+                    bot.send(mainRoomName, content.replace(".공지 ", "").replace(".ㄱㅈ ", ""));
             }
         }
     }
