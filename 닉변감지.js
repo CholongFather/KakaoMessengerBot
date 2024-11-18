@@ -25,13 +25,16 @@ function onMessage(msg)
 {
   try
   {
-    var userHashList = JSON.parse(fs.read(userHashPaths));
+
     var userHash = msg.author.hash;
     var currentName = msg.author.name;
-    var roomName = msg.room.name;
-
+    var roomName = msg.room;
+    var roomId = msg.channelId.toString().substring(0, 10);
+    
     if (userHash)
     {
+      var userHashList = JSON.parse(fs.read(userHashPaths));
+
       if (!userHashList.find(n => n.userHash === userHash))
       {
         userHashList.push(
