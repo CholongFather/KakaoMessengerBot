@@ -14,11 +14,11 @@ var upDownMax = 1000;
 var upDownUser = "";
 var zodiac = ["쥐띠", "소띠", "호랑이띠", "토끼띠", "용띠", "뱀띠", "말띠", "양띠", "원숭이띠", "닭띠", "개띠", "돼지띠"];
 var offset = 1000 * 60 * 60 * 1;
-var mainRoomName = "name";
-
-//1843311789 : it방
-//1843374958 : 메인
-//1843176468 : 운영진방
+var itRoom = "1843311789";
+var mainRoom = "1843374958";
+var mainRoomName = "메인방";
+var adminRoom = "1843176468";
+var adminRoomName = "운영진방";
 
 //메세지 왔을 경우
 function onMessage(msg)
@@ -32,7 +32,7 @@ function onMessage(msg)
         var roomName = msg.room;
 
         //이사가면 바꿀것...
-        if (roomId === "1843374958")
+        if (roomId === mainRoomId)
         {
             mainRoomName = roomName;
 
@@ -50,6 +50,13 @@ function onMessage(msg)
                     newUserGreet(msg);
                 else if (message.includes("vs"))
                     pickVersusText(msg);
+                else if (message.includes("@운영진"))
+                {
+                    if (bot.canReply(adminRoomName))
+                        bot.send(adminRoomName, message.replace("@운영진 ", ""));
+                    else
+                        msg.reply("지금은 막내가 운영진 호출이 불가해 ㅠ");
+                }
                 else
                 {
                     attendance(msg, roomId, sender, userHash, date(0), date(-1), time());
@@ -112,14 +119,14 @@ function onCommand(msg)
         else if (content.includes("포인트") && content.includes("사용"))
             usePoint(roomId, msg, userHash);
         else if (command === "전체포인트")
-            getPointList(roomId, msg, roomName);
+            getPointList(mainRoom, msg, roomName);
         else if (command === "방이름")
             msg.reply("우리 방 이름 : " + roomName);
         else if (command === "방번호")
             msg.reply("우리 방 번호 : " + roomId);
         else if (command === "ㄱㅈ" || command === "공지")
         {
-            if (roomId === "1843176468")
+            if (roomId === adminRoom)
             {
                 if (bot.canReply(mainRoomName))
                     bot.send(mainRoomName, content.replace(".공지 ", "").replace(".ㄱㅈ ", ""));
@@ -145,7 +152,7 @@ function checkAdmin(userHash)
             //서락 남
         case "b57042c03b7701d7bf427a6ee810f16f36d305d8024c5abb82a61875e8a8ab4e":
         case "5c2e2cd9c86c3f8b135bd81f1dfba1f66ced64843d0803a7e214b4666568de69":
-        case "운영진방":
+        case adminRoomName:
             return true;
         default:
             return false;
@@ -332,9 +339,6 @@ function getPointList(roomId, msg, roomName)
 {
     if (checkAdmin(roomName) == false)
         return;
-    
-    //임시
-    roomId = "1843374958";
 
     fileCheck(chatPointPath);
 

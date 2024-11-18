@@ -1,8 +1,14 @@
+var scriptName = '닉변 감지 봇';
 var bot = BotManager.getCurrentBot();
 var sdcardPath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
 var userHashPaths = sdcardPath + '/userHashs.json';
 var fs = FileStream;
 var offset = 1000 * 60 * 60 * 1;
+var itRoom = "1843311789";
+var mainRoom = "1843374958";
+var mainRoomName = "메인방";
+var adminRoom = "1843176468";
+var adminRoomName = "운영진방";
  
 function today()
 {
@@ -25,17 +31,16 @@ function onMessage(msg)
 {
   try
   {
-
     var userHash = msg.author.hash;
     var currentName = msg.author.name;
     var roomName = msg.room;
     var roomId = msg.channelId.toString().substring(0, 10);
-    
-    if (userHash)
+
+    if (roomId === mainRoom)
     {
       var userHashList = JSON.parse(fs.read(userHashPaths));
 
-      if (!userHashList.find(n => n.userHash === userHash))
+      if (userHashList.find(n => n.userHash === userHash) === false)
       {
         userHashList.push(
         {
@@ -59,8 +64,8 @@ function onMessage(msg)
           if (userHashList[idx].comment)
             returnMessage += "\n코멘트 : " + userHashList[idx].comment;
 
-          if (bot.canReply("운영진방"))
-            bot.send("운영진방", returnMessage);
+          if (bot.canReply(adminRoomName))
+            bot.send(adminRoomName, returnMessage);
           else
             msg.reply(returnMessage);
 
@@ -109,6 +114,12 @@ function onCommand(msg)
 
         msg.reply(name + "의 코멘트 저장 완료");
       }
+    }
+    else (command === "파일")
+    {
+      var userHashRawFile = fs.read(userHashPaths);
+
+      msg.reply(userHashRawFile);
     }
   }
   catch (e)
