@@ -1,3 +1,4 @@
+var scriptName = '멘션 감지 봇';
 var bot = BotManager.getCurrentBot();
 
 const mentions = {};

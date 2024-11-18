@@ -502,10 +502,13 @@ function messageCount(room, sender, userHash, msg)
     fileCheck(chatStartPath);
     var chatStartDate = JSON.parse(fs.read(chatStartPath));
 
-    if (chatCountList.find(n => n.room === room && n.userHash === userHash))
+    var idx = chatCountList.findIndex(n => n.room === room && n.userHash === userHash);
+
+    if (idx > -1)
     {
-        chatCountList[chatCountList.findIndex(n => n.room === room && n.userHash === userHash)].chat++;
-        chatCountList[chatCountList.findIndex(n => n.room === room && n.userHash === userHash)].sender = sender;
+        chatCountList[idx].chat++;
+        chatCountList[idx].sender = sender;
+        chatCountList[idx].lastChat = Date.now();
     }
     else
     {
@@ -523,6 +526,7 @@ function messageCount(room, sender, userHash, msg)
             'room': room,
             'sender': sender,
             'userHash': userHash,
+            'lastChat': Date.now(),
             'chat': 1
         });
     }
@@ -551,7 +555,8 @@ function messageCountRank(room, msg)
 
     for (n in chatCountListByRoom)
     {
-        chatRankResponse += '[' + rank(Number(n) + 1) + '] ' + chatCountListByRoom[n].sender + ' : ' + chatCountListByRoom[n].chat + '\n';
+        if (chatCountListByRoom[n].lastChat)
+            chatRankResponse += '[' + rank(Number(n) + 1) + '] ' + chatCountListByRoom[n].sender + ' : ' + chatCountListByRoom[n].chat + '\n';
     }
 
     chatRankResponse = chatRankResponse.slice(0, chatRankResponse.length - 1);
