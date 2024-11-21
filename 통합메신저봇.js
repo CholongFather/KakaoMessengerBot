@@ -11,8 +11,25 @@ var fs = FileStream;
 var bot = BotManager.getCurrentBot();
 var upDownNumber = {};
 var upDownMax = 1000;
-var upDownUser = "";
+//이미 띠별 운세 가져오는 중
+var getFortuneTellerNow = false;
 var zodiac = ["쥐띠", "소띠", "호랑이띠", "토끼띠", "용띠", "뱀띠", "말띠", "양띠", "원숭이띠", "닭띠", "개띠", "돼지띠"];
+var astroLogy = 
+{ 
+	["양"] : "3/21 ~ 4/19", 
+	["황소"] : "4/20 ~ 5/20" ,
+	["쌍둥이"] : "5/21 ~ 6/21",
+	["게"] : "6/22 ~ 7/22",
+	["사자"] : "7/23 ~ 8/22",
+	["처녀"] : "8/23 ~ 9/23",
+	["천칭"] : "9/24 ~ 10/22",
+	["전갈"] : "10/23 ~ 11/22",
+	["궁수"] : "11/23 ~ 12/24",
+	["염소"] : "12/25 ~ 1/19",
+	["물병"] : "1/20 ~ 2/18",
+	["물고기"] : "2/19 ~ 3/20"
+};
+
 var offset = 1000 * 60 * 60 * 1;
 var itRoom = "1843311789";
 var debugRoom = "0";
@@ -127,7 +144,7 @@ function onCommand(msg)
 			coinFlipGame(msg);
 		else if (command === "ㅇㅅ" || command === "운세")
 			getAllZodiacFortuneTeller(msg, args);
-		else if (command === "?" || command === "ㅁㄹ" || command === "명령" || command === "명령어")
+		else if (command === "?" || command === "명령")
 		{
 			if (roomId === mainRoom)
 				getCommandList(msg);
@@ -152,6 +169,11 @@ function onCommand(msg)
 		}
 		else if (command === "ㅅㄱ" || command === "시간")
 			getGlobalTimeList(msg);
+		else if (command === "별자리")
+			getAstroLogicalSign(msg, args[0]);
+		else if (command === "타로")
+			return;
+
 	}
 	catch (e)
 	{
@@ -302,6 +324,7 @@ function getAdminCommandList(msg)
 	var commandList = "막내의 운영진방 명령어 목록 \n -------------------------- \n";
 	commandList += "포인트 내역 : .전체포인트\n";
 	commandList += "자소서 내역 : .전체자소서\n";
+	commandList += "메인방 공지 : .ㄱㅈ, .공지\n";
 
 	msg.reply(commandList);
 }
@@ -309,14 +332,14 @@ function getAdminCommandList(msg)
 function getGlobalTimeList(msg)
 {
 	var timeList = "현재 시간 : \n ------------------------------- \n";
-	timeList += "미국 (하와이) : " + getLocationDateTime(offset * -18) + '\n';
-	timeList += "미국 (알래스카) : " + getLocationDateTime(offset * -17)+ '\n';
-	timeList += "미국 (태평양 표준) : " + getLocationDateTime(offset * -17)+ '\n';
-	timeList += "미국 (산지 표준) : " + getLocationDateTime(offset * -16)+ '\n';
-	timeList += "미국 (중부 표준) : " + getLocationDateTime(offset * -15)+ '\n';
-	timeList += "멕시코 : " + getLocationDateTime(offset * -15)+ '\n';
-	timeList += "캐나다 토론토 : " + getLocationDateTime(offset * -14)+ '\n';
-	timeList += "미국 (동부 표준) : " + getLocationDateTime(offset * -14)+ '\n';
+	timeList += "미국 (하와이) : " + getLocationDateTime(offset * -17) + '\n';
+	timeList += "미국 (알래스카) : " + getLocationDateTime(offset * -16)+ '\n';
+	timeList += "미국 (태평양 표준) : " + getLocationDateTime(offset * -16)+ '\n';
+	timeList += "미국 (산지 표준) : " + getLocationDateTime(offset * -15)+ '\n';
+	timeList += "미국 (중부 표준) : " + getLocationDateTime(offset * -14)+ '\n';
+	timeList += "멕시코 : " + getLocationDateTime(offset * -14)+ '\n';
+	timeList += "캐나다 토론토 : " + getLocationDateTime(offset * -13)+ '\n';
+	timeList += "미국 (동부 표준) : " + getLocationDateTime(offset * -13)+ '\n';
 	timeList += "브라질 : " + getLocationDateTime(offset * -12)+ '\n';
 	timeList += "영국 : " + getLocationDateTime(offset * -8)+ '\n';
 	timeList += "포르투갈 : " + getLocationDateTime(offset * -8)+ '\n';
@@ -853,7 +876,29 @@ function upDownGame(msg, args, sender, room)
 	}
 }
 
-//네이버 운세 가져오기
+//네이버 별자리 운세
+function getAstroLogicalSign(msg, arg)
+{
+	try
+	{
+		var value = astroLogy[arg];
+
+		if (!value)
+			msg.reply(arg + " 별자리는 없네?");
+
+		var url = org.jsoup.Jsoup.connect("https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=0&ie=utf8&query=" + arg + "자리운세").get().select("#yearFortune > div");
+		var main = url.select("div:nth-child(3) > div.detail.detail2._togglePanelSelectLink > span").text();
+		var year = url.select("div:nth-child(3) > div.detail.detail2._togglePanelSelectLink > p").text();
+
+		msg.reply("오늘의 "+ arg + "("+ value +") 운세🌟\n" +"\n\n"+main+"\n\n"+year);
+	}
+	catch (e)
+	{
+		Log.error(e);
+	}
+}
+
+//네이버 띠별 운세 가져오기
 function getFortuneTeller(name)
 {
 	try
@@ -888,8 +933,9 @@ function wait(sec)
 	}
 }
 
-var getFortuneTellerNow = false;
 
+
+//네이버 띠별 전체 운세 가져오기
 function getAllZodiacFortuneTeller(msg)
 {
 	//운세 계속 가져오는 부분 블록
