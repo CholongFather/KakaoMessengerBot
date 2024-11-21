@@ -38,13 +38,18 @@ var mainRoom = "1843374958";
 var mainRoomName = "메인방";
 var adminRoom = "1843176468";
 var adminRoomName = "운영진방";
+var botName = "막내";
 
 //메세지 왔을 경우
 function onMessage(msg)
 {
 	try
 	{
-		var message = msg.content;
+		var message = msg.content.trim();
+
+		if (message.startsWith('.'))
+			return;
+
 		var roomId = msg.channelId.toString().substring(0, 10);
 		var sender = msg.author.name;
 		var userHash = msg.author.hash;
@@ -60,32 +65,29 @@ function onMessage(msg)
 		{
 			mainRoomName = roomName;
 
-			if (message.startsWith('.') == false && message.trim())
+			if (message.includes("사진을 보냈습니다."))
+				return;
+			else if (message.includes("이모티콘을 보냈습니다."))
+				return;
+			else if (message.includes("보이스룸이 방금 시작했어요."))
+				voiceRoomStart(msg, sender);
+			else if (message.includes("보이스룸 종료 "))
+				voiceRoomEnd(msg, sender);
+			else if (message.includes("새 칭구 환영하자규"))
+				newUserGreet(msg);
+			else if (message.includes("vs"))
+				pickVersusText(msg);
+			else if (message.includes("@운영진"))
 			{
-				if (message.includes("사진을 보냈습니다."))
-					return;
-				else if (message.includes("이모티콘을 보냈습니다."))
-					return;
-				else if (message.includes("보이스룸이 방금 시작했어요."))
-					voiceRoomStart(msg, sender);
-				else if (message.includes("보이스룸 종료 "))
-					voiceRoomEnd(msg, sender);
-				else if (message.includes("새 칭구 환영하자규"))
-					newUserGreet(msg);
-				else if (message.includes("vs"))
-					pickVersusText(msg);
-				else if (message.includes("@운영진"))
-				{
-					if (bot.canReply(adminRoomName))
-						bot.send(adminRoomName, sender + " : " + message.replace("@운영진 ", ""));
-					else
-						msg.reply("지금은 막내가 운영진 호출이 불가해 ㅠ");
-				}
+				if (bot.canReply(adminRoomName))
+					bot.send(adminRoomName, sender + " : " + message.replace("@운영진 ", ""));
 				else
-				{
-					attendance(msg, roomId, sender, userHash, date(0), date(-1), time());
-					messageCount(roomId, sender, userHash, msg);
-				}
+					msg.reply("지금은 " + botName + "가 운영진 호출이 불가해 ㅠ");
+			}
+			else
+			{
+				attendance(msg, roomId, sender, userHash, date(0), date(-1), time());
+				messageCount(roomId, sender, userHash, msg);
 			}
 		}
 	}
@@ -114,71 +116,100 @@ function onCommand(msg)
 			mainRoom = debugRoom;
 		}
 
-		if (command === "출석부")
-			attendanceRegisterList(msg, roomId, date(0));
-		else if (command === "채팅" || command === "채팅순위")
-			messageCountRank(roomId, msg);
-		else if (content.includes("자소서") && content.includes("저장"))
+		switch (command)
+		{
+			case "출석부" : attendanceRegisterList(msg, roomId, date(0)); break;
+			case "채팅" :
+			case "채팅순위" : messageCountRank(roomId, msg); break;
+			case "소개" : getPersonalStatement(msg, args); break;
+			case "자기소개" : getSelfPersonalStatement(msg, sender); break;
+			case "실검" : getSearchWord(msg); break;
+			case "존대" : msg.reply("우리방에서 존대는 벌공이야. 얼공 큐!"); break;
+			case "ㄷ" :
+			case "동전" : coinFlipGame(msg); break;
+			case "ㅈ" :
+			case "주사위" : diceGame(msg, args); break;
+			case "ㅇ" :
+			case "업다운" : upDownGame(msg, args, sender, roomId);				
+			case "별" : getAstroLogicalSign(msg, args[0]); break;
+			case "ㅇㅅ" :
+			case "운세" : getAllZodiacFortuneTeller(msg, args); break;
+			case "ㅅㄱ" :
+			case "시간" : getGlobalTimeList(msg); break;
+			case "타로" : getTaro(msg, sender); break;
+			case "방이름" : msg.reply("우리 방 이름 : " + roomName); break;
+			case "방번호" : msg.reply("우리 방 번호 : " + roomId); break;
+			case "?" :
+			case "명령" : getCommandList(msg); break;
+		}
+
+		if (roomId === adminRoom || roomId === itRoom)
+		{
+			switch (command)
+			{
+				case "ㄱㅈ" :
+				case "공지" :
+					if (bot.canReply(mainRoomName))
+						bot.send(mainRoomName, content.replace(".공지 ", "").replace(".ㄱㅈ ", ""));
+					break;
+				case "전체포인트" : getPointList(mainRoom, msg, roomName); break;
+				case "전체자소서" : getAllPersonalStatement(msg, roomName); break;
+				case "?" :
+				case "명령" : getAdminCommandList(msg); break;
+				case "초기화": fileReset(msg, args, userHash); break;
+				case "상태" :
+				case "막내상태" : getPhoneStatus(msg, roomName); break;
+			}
+		}
+
+		if (content.includes("자소서") && content.includes("저장"))
 			savePersonalStatement(msg, content, userHash);
 		else if (content.includes("자소서") && content.includes("삭제"))
 			deletePersonalStatement(msg, content, userHash);
-		else if (command === "소개")
-			getPersonalStatement(msg, args);
-		else if (command === "자기소개")
-			getSelfPersonalStatement(msg, sender);
-		else if (command === "전체자소서")
-			getAllPersonalStatement(msg, roomName);
-		else if (command === "상태" || command === "막내상태")
-			getPhoneStatus(msg, userHash, roomId);
 		else if (command === "실검" || command === "실검순위")
 			getSearchWord(msg);
-		else if (command === "초기화")
-			fileReset(msg, args, userHash);
-		else if (command === "ㅇ" || command === "업다운")
-			upDownGame(msg, args, sender, roomId);
-		else if (command === "ㅈ" || command === "주사위")
-			diceGame(msg, args);
-		else if (command === "존대")
-			msg.reply("우리방에서 존대는 벌공이야. 얼공 큐!");
-		else if (command === "ㄷ" || command === "동전")
-			coinFlipGame(msg);
-		else if (command === "ㅇㅅ" || command === "운세")
-			getAllZodiacFortuneTeller(msg, args);
-		else if (command === "?" || command === "명령")
-		{
-			if (roomId === mainRoom)
-				getCommandList(msg);
-			if (roomId === adminRoom)
-				getAdminCommandList(msg);
-		}
 		else if (content.includes("포인트") && content.includes("사용"))
 			usePoint(mainRoom, msg, userHash);
-		else if (command === "전체포인트")
-			getPointList(mainRoom, msg, roomName);
-		else if (command === "방이름")
-			msg.reply("우리 방 이름 : " + roomName);
-		else if (command === "방번호")
-			msg.reply("우리 방 번호 : " + roomId);
-		else if (command === "ㄱㅈ" || command === "공지")
-		{
-			if (roomId === adminRoom)
-			{
-				if (bot.canReply(mainRoomName))
-					bot.send(mainRoomName, content.replace(".공지 ", "").replace(".ㄱㅈ ", ""));
-			}
-		}
-		else if (command === "ㅅㄱ" || command === "시간")
-			getGlobalTimeList(msg);
-		else if (command === "별자리")
-			getAstroLogicalSign(msg, args[0]);
-		else if (command === "타로")
-			return;
-
 	}
 	catch (e)
 	{
 		Log.error("onCommand :" + e);
 	}
+}
+
+//도움말 목록
+function getCommandList(msg)
+{
+	var commandList = botName + "의 신나는 명령어 목록 \n -------------------------- \n";
+
+	commandList += "실시간 검색어 : .실검\n";
+	commandList += "띠별 운세 : .ㅇㅅ, .운세\n";
+	commandList += "별자리 운세 : .별 (자리)\n";
+	commandList += "타로 카드 : .타로 (개발중)\n";
+	commandList += "현재 시간 : .ㅅㄱ .시간\n";
+	commandList += "자소서 보기 : .소개 (닉네임 ex. 누구 남)\n";
+	commandList += "자기 자소서 보기 : .자기소개\n";
+	commandList += "채팅 순위 보기 : .채팅, .채팅순위\n";
+	commandList += "출석부 보기 : .출석부\n";
+	commandList += "존대 규칙 : .존대\n";
+	commandList += "동전 던지기 : .ㄷ, .동전\n";
+	commandList += "업다운 게임 : .ㅇ 시작, .업다운 시작, .종료, .업다운 종료, .ㅇ (숫자), .업다운 (숫자)\n";
+	commandList += "주사위 던지기 : .ㅈ, .주사위 (+ 숫자)\n";
+	commandList += "방 이름 확인 : .방이름\n";
+	commandList += "운영진 호출 : @운영진 할말";
+
+	msg.reply(commandList);
+}
+
+function getAdminCommandList(msg)
+{
+	var commandList = botName + "의 운영진방 명령어 목록 \n -------------------------- \n";
+	commandList += "포인트 내역 : .전체포인트\n";
+	commandList += "자소서 내역 : .전체자소서\n";
+	commandList += "메인방 공지 : .ㄱㅈ, .공지\n";
+	commandList += "막내 상태 : .상태, .막내상태";
+
+	msg.reply(commandList);
 }
 
 //관리자 판별 함수, 방이름으로 변경 중
@@ -297,37 +328,7 @@ function hasFinalConsonant(str)
 	return (lastCharCode - 44032) % 28;
 };
 
-//도움말 목록
-function getCommandList(msg)
-{
-	var commandList = "막내의 신나는 명령어 목록 \n -------------------------- \n";
 
-	commandList += "실시간 검색어 : .실검, .실검 순위\n";
-	commandList += "운세 : .ㅇㅅ, .운세\n";
-	commandList += "현재 시간 : .ㅅㄱ .시간\n";
-	commandList += "자소서 보기 : .소개 (닉네임 ex. 누구 남)\n";
-	commandList += "자기 자소서 보기 : .자기소개\n";
-	commandList += "채팅 순위 보기 : .채팅, .채팅순위\n";
-	commandList += "출석부 보기 : .출석부\n";
-	commandList += "존대 규칙 : .존대\n";
-	commandList += "동전 던지기 : .ㄷ, .동전\n";
-	commandList += "업다운 게임 : .ㅇ 시작, .업다운 시작, .종료, .업다운 종료, .ㅇ (숫자), .업다운 (숫자)\n";
-	commandList += "주사위 던지기 : .ㅈ, .주사위 (+ 숫자)\n";
-	commandList += "방 이름 확인 : .방이름\n";
-	commandList += "운영진 호출 : @운영진 할말";
-
-	msg.reply(commandList);
-}
-
-function getAdminCommandList(msg)
-{
-	var commandList = "막내의 운영진방 명령어 목록 \n -------------------------- \n";
-	commandList += "포인트 내역 : .전체포인트\n";
-	commandList += "자소서 내역 : .전체자소서\n";
-	commandList += "메인방 공지 : .ㄱㅈ, .공지\n";
-
-	msg.reply(commandList);
-}
 
 function getGlobalTimeList(msg)
 {
@@ -453,12 +454,12 @@ function pickVersusText(msg)
 	msg.reply(array[Math.floor(Math.random() * array.length)].trim());
 }
 
-function getPhoneStatus(msg, userHash, room)
+function getPhoneStatus(msg, roomName)
 {
-	if (checkAdmin(userHash) == false)
+	if (checkAdmin(roomName) == false)
 		return;
 
-	msg.reply("현재 배터리 : " + Device.getBatteryLevel() + "%\n어제 : " + date(-1) + "\n오늘 : " + date(0) + "\n시간 : " + time() + "\nRoom : " + room);
+	msg.reply(botName + " 배터리 : " + Device.getBatteryLevel() + "%\n어제 : " + date(-1) + "\n오늘 : " + date(0) + "\n시간 : " + time());
 }
 
 function getSearchWord(msg)
@@ -877,6 +878,26 @@ function upDownGame(msg, args, sender, room)
 }
 
 //네이버 별자리 운세
+function getTaro(msg, sender)
+{
+	try
+	{
+		msg.reply(sender + "야 지금 " + botName + "가 카드 한장을 뽑고 있어 (뒤적... 뒤적)");
+
+		var taroCardUrl = "https://tarotapi.dev/api/v1/cards/random?n=1";
+		var taroCardResponse = org.jsoup.Jsoup.connect(taroCardUrl).ignoreContentType(true).ignoreHttpErrors(true).get().wholeText();
+		var taroCard = JSON.parse(taroCardResponse).cards[0];
+
+		//앞뒤 표시 어떻게 할건지
+		msg.reply("타로 카드 운세 ------------------\n뽑은 카드 명 : " + taroCard.name + "\n정방향 뜻 :" + taroCard.meaning_up + "\n역방향 뜻 :"+ taroCard.meaning_rev + "\n설명 :"+ taroCard.desc + "\n");
+	}
+	catch (e)
+	{
+		Log.error(e);
+	}
+}
+
+//네이버 별자리 운세
 function getAstroLogicalSign(msg, arg)
 {
 	try
@@ -887,10 +908,9 @@ function getAstroLogicalSign(msg, arg)
 			msg.reply(arg + " 별자리는 없네?");
 
 		var url = org.jsoup.Jsoup.connect("https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=0&ie=utf8&query=" + arg + "자리운세").get().select("#yearFortune > div");
-		var main = url.select("div:nth-child(3) > div.detail.detail2._togglePanelSelectLink > span").text();
 		var year = url.select("div:nth-child(3) > div.detail.detail2._togglePanelSelectLink > p").text();
 
-		msg.reply("오늘의 "+ arg + "("+ value +") 운세🌟\n" +"\n\n"+main+"\n\n"+year);
+		msg.reply("오늘의 "+ arg + "자리 운세🌟" + "\n\n" + year);
 	}
 	catch (e)
 	{
@@ -932,8 +952,6 @@ function wait(sec)
 		now = Date.now();
 	}
 }
-
-
 
 //네이버 띠별 전체 운세 가져오기
 function getAllZodiacFortuneTeller(msg)
