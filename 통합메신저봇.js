@@ -121,7 +121,7 @@ function onCommand(msg)
 			case "출석부" : attendanceRegisterList(msg, roomId, date(0)); break;
 			case "채팅" :
 			case "채팅순위" : messageCountRank(roomId, msg); break;
-			case "소개" : getPersonalStatement(msg, args); break;
+			case "소개" : getPersonalStatement(msg, args, roomId); break;
 			case "자기소개" : getSelfPersonalStatement(msg, sender); break;
 			case "실검" : getSearchWord(msg); break;
 			case "존대" : msg.reply("우리방에서 존대는 벌공이야. 얼공 큐!"); break;
@@ -723,7 +723,7 @@ function deletePersonalStatement(msg, content, userHash)
 	msg.reply("삭제 완료");
 }
 
-function getPersonalStatement(msg, arg)
+function getPersonalStatement(msg, arg, roomId)
 {
 	try
 	{
@@ -736,11 +736,13 @@ function getPersonalStatement(msg, arg)
 
 		var personalStatementList = JSON.parse(fs.read(personalStatementPath));
 
-
-		if (name.length < 2)
+		if (roomId === mainRoom)
 		{
-			msg.reply("이름이 이상혀서.. 소개를 못혀");
-			return;
+			if (name.length < 2)
+			{
+				msg.reply("이름이 이상혀서.. 소개를 못혀");
+				return;
+			}
 		}
 
 		var reply = false;
@@ -791,7 +793,7 @@ function getAllPersonalStatement(msg, roomName)
 	fileCheck(personalStatementPath);
 
 	var personalStatementList = JSON.parse(fs.read(personalStatementPath));
-	var returnpersonalStatementList = "";
+	var returnpersonalStatementList = "전체 자소서 수 : " + personalStatementList.length + "\n";
 
 	personalStatementList.sort(function(a, b) 
 	{
