@@ -141,6 +141,7 @@ function onCommand(msg)
 			case "방번호" : msg.reply("우리 방 번호 : " + roomId); break;
 			case "?" :
 			case "명령" : getCommandList(msg); break;
+			case "19금" : msg.reply("20토"); break;
 		}
 
 		if (roomId === adminRoom || roomId === itRoom)
@@ -166,8 +167,6 @@ function onCommand(msg)
 			savePersonalStatement(msg, content, userHash);
 		else if (content.includes("자소서") && content.includes("삭제"))
 			deletePersonalStatement(msg, content, userHash);
-		else if (command === "실검" || command === "실검순위")
-			getSearchWord(msg);
 		else if (content.includes("포인트") && content.includes("사용"))
 			usePoint(mainRoom, msg, userHash);
 	}
@@ -438,7 +437,8 @@ function getPointList(roomId, msg, roomName)
 	{
 		for (var i in chatPointListByRoom)
 		{
-			chatPointListByRoomReply += chatPointListByRoom[i].name + " : " + chatPointListByRoom[i].point + "\n";
+			if (chatPointListByRoom[i].name)
+				chatPointListByRoomReply += chatPointListByRoom[i].name + " : " + chatPointListByRoom[i].point + "\n";
 		}
 
 		msg.reply(trimLastSpace(chatPointListByRoomReply));
