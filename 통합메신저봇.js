@@ -752,6 +752,7 @@ function getPersonalStatement(msg, arg, roomId)
 			if (e.name.includes(name))
 			{
 				reply = true;
+				wait(1);
 				msg.reply(e.name + "의 자소서\n" + e.content + " \n저장 시간 : " + e.time);
 			}
 		});
