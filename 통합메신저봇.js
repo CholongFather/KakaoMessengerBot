@@ -1,4 +1,6 @@
-//전역 선언 변수
+importClass(org.jsoup.Jsoup);
+importClass(org.jsoup.Connection);
+
 var scriptName = '통합 메신저 봇';
 var sdcardPath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
 var attendancePath = sdcardPath + '/attendanceList.json';
@@ -7,28 +9,20 @@ var chatCountPath = sdcardPath + '/chatCountList.json';
 var chatStartPath = sdcardPath + '/chatStart.json';
 var personalStatementPath = sdcardPath + '/personalStatementList.json';
 var zodiacFortuneTellerPath = sdcardPath + '/zodiacFortuneTeller.json';
+var botData = sdcardPath + '/botData.json';
+var taroCardData = sdcardPath + '/taroCard.json';
 var fs = FileStream;
 var bot = BotManager.getCurrentBot();
 var upDownNumber = {};
 var upDownMax = 1000;
 //이미 띠별 운세 가져오는 중
 var getFortuneTellerNow = false;
-var zodiac = ["쥐띠", "소띠", "호랑이띠", "토끼띠", "용띠", "뱀띠", "말띠", "양띠", "원숭이띠", "닭띠", "개띠", "돼지띠"];
-var astroLogy = 
-{ 
-	["양"] : "3/21 ~ 4/19", 
-	["황소"] : "4/20 ~ 5/20" ,
-	["쌍둥이"] : "5/21 ~ 6/21",
-	["게"] : "6/22 ~ 7/22",
-	["사자"] : "7/23 ~ 8/22",
-	["처녀"] : "8/23 ~ 9/23",
-	["천칭"] : "9/24 ~ 10/22",
-	["전갈"] : "10/23 ~ 11/22",
-	["궁수"] : "11/23 ~ 12/24",
-	["염소"] : "12/25 ~ 1/19",
-	["물병"] : "1/20 ~ 2/18",
-	["물고기"] : "2/19 ~ 3/20"
-};
+var isGetStaticFile = false;
+
+var zodiac = [];
+var geminiKey = "";
+var astroLogy = {};
+var nameChemistryKoreanScore = {};
 
 var offset = 1000 * 60 * 60 * 1;
 var itRoom = "1843311789";
@@ -45,6 +39,9 @@ function onMessage(msg)
 {
 	try
 	{
+		if (!isGetStaticFile)
+			getStaticFile();
+
 		var message = msg.content.trim();
 
 		if (message.startsWith('.'))
@@ -136,12 +133,15 @@ function onCommand(msg)
 			case "운세" : getAllZodiacFortuneTeller(msg, args); break;
 			case "ㅅㄱ" :
 			case "시간" : getGlobalTimeList(msg); break;
-			case "타로" : getTaro(msg, sender); break;
+			case "타로" : getTaroCardWithGemini(msg, userHash); break;
 			case "방이름" : msg.reply("우리 방 이름 : " + roomName); break;
 			case "방번호" : msg.reply("우리 방 번호 : " + roomId); break;
 			case "?" :
 			case "명령" : getCommandList(msg); break;
+			//TODO : 시덥잖은 농담을 저장할 수 있게.
 			case "19금" : msg.reply("20토"); break;
+			case "빨래" : msg.reply("빨래는 너가 할것"); break;
+			case "이름궁합" : getNameChemistry(msg, content); break;
 		}
 
 		if (roomId === adminRoom || roomId === itRoom)
@@ -184,7 +184,8 @@ function getCommandList(msg)
 	commandList += "실시간 검색어 : .실검\n";
 	commandList += "띠별 운세 : .ㅇㅅ, .운세\n";
 	commandList += "별자리 운세 : .별 (자리)\n";
-	commandList += "타로 카드 : .타로 (개발중)\n";
+	commandList += "타로 카드 : .타로\n";
+	commandList += "이름 궁합 : .이름궁합 (A), (B)\n";
 	commandList += "현재 시간 : .ㅅㄱ .시간\n";
 	commandList += "자소서 보기 : .소개 (닉네임 ex. 누구 남)\n";
 	commandList += "자기 자소서 보기 : .자기소개\n";
@@ -255,7 +256,7 @@ function getLocationDateTime(offset)
 {
 	var date = new Date((new Date()).getTime() + offset);
 
-	return String(date.getFullYear()) + '-' + String(date.getMonth() + 1) + '-' + String(date.getDate() + ' ' + date.getHours()) + ':' + String(date.getMinutes());
+	return String(date.getMonth() + 1) + '-' + String(date.getDate() + ' ' + date.getHours()) + ':' + String(date.getMinutes());
 }
 
 function getTimeStampToDateTime(timestamp)
@@ -264,6 +265,23 @@ function getTimeStampToDateTime(timestamp)
 	date = new Date(date.getTime() + offset);
 
 	return String(date.getFullYear()) + '-' + String(date.getMonth() + 1) + '-' + String(date.getDate() + ' ' + date.getHours()) + ':' + String(date.getMinutes());
+}
+
+function getStaticFile()
+{
+	fileCheck(botData);
+
+	var botDataList = JSON.parse(fs.read(botData))[0];
+
+	Log.info(JSON.stringify(botDataList));
+
+	geminiKey = botDataList.geminiKey;
+	zodiac = botDataList.zodiac;
+	astroLogy = botDataList.astroLogy;
+	nameChemistryKoreanScore = botDataList.nameChemistryKoreanScore;
+
+	isGetStaticFile = true;
+
 }
 
 //순위에 메달 넣는
@@ -327,16 +345,9 @@ function hasFinalConsonant(str)
 	return (lastCharCode - 44032) % 28;
 };
 
-
-
 function getGlobalTimeList(msg)
 {
 	var timeList = "현재 시간 : \n ------------------------------- \n";
-	timeList += "미국 (하와이) : " + getLocationDateTime(offset * -17) + '\n';
-	timeList += "미국 (알래스카) : " + getLocationDateTime(offset * -16)+ '\n';
-	timeList += "미국 (태평양 표준) : " + getLocationDateTime(offset * -16)+ '\n';
-	timeList += "미국 (산지 표준) : " + getLocationDateTime(offset * -15)+ '\n';
-	timeList += "미국 (중부 표준) : " + getLocationDateTime(offset * -14)+ '\n';
 	timeList += "멕시코 : " + getLocationDateTime(offset * -14)+ '\n';
 	timeList += "캐나다 토론토 : " + getLocationDateTime(offset * -13)+ '\n';
 	timeList += "미국 (동부 표준) : " + getLocationDateTime(offset * -13)+ '\n';
@@ -450,8 +461,12 @@ function pickVersusText(msg)
 {
 	var message = msg.content;
 	var array = message.split("vs");
-	
-	msg.reply(array[Math.floor(Math.random() * array.length)].trim());
+
+	//이언 요청
+	if (array.find(c => c.trim() === "이언"))
+		msg.reply("이언이가 무조건 이긴다.");
+	else
+		msg.reply(array[Math.floor(Math.random() * array.length)].trim());
 }
 
 function getPhoneStatus(msg, roomName)
@@ -465,7 +480,7 @@ function getPhoneStatus(msg, roomName)
 function getSearchWord(msg)
 {
 	var searchWordUrl = "https://api.signal.bz/news/realtime";
-	var searchWordResponse = org.jsoup.Jsoup.connect(searchWordUrl).ignoreContentType(true).ignoreHttpErrors(true).get().wholeText();
+	var searchWordResponse = Jsoup.connect(searchWordUrl).ignoreContentType(true).ignoreHttpErrors(true).get().wholeText();
 	var searchWordData = JSON.parse(searchWordResponse);
 	var replySearchWord = "실시간 검색어 Top 10" + "\n";
 
@@ -503,9 +518,14 @@ function fileReset(msg, args, userHash)
 		fs.write(zodiacFortuneTellerPath, JSON.stringify([]));
 		msg.reply('운세 초기화 완료');
 	}
+	else if (args[0] == '타로')
+	{
+		fs.write(taroCardData, JSON.stringify([]));
+		msg.reply('타로 초기화 완료');
+	}
 	else
 	{
-		msg.reply('출석부, 채팅순위, 자소서, 운세 중 하나만 초기화 하고 싶어 ex .초기화 출석부');
+		msg.reply('출석부, 채팅순위, 자소서, 운세, 타로 중 하나만 초기화 하고 싶어 ex .초기화 출석부');
 	}
 }
 
@@ -881,26 +901,6 @@ function upDownGame(msg, args, sender, room)
 }
 
 //네이버 별자리 운세
-function getTaro(msg, sender)
-{
-	try
-	{
-		msg.reply(sender + "야 지금 " + botName + "가 카드 한장을 뽑고 있어 (뒤적... 뒤적)");
-
-		var taroCardUrl = "https://tarotapi.dev/api/v1/cards/random?n=1";
-		var taroCardResponse = org.jsoup.Jsoup.connect(taroCardUrl).ignoreContentType(true).ignoreHttpErrors(true).get().wholeText();
-		var taroCard = JSON.parse(taroCardResponse).cards[0];
-
-		//앞뒤 표시 어떻게 할건지
-		msg.reply("타로 카드 운세 ------------------\n뽑은 카드 명 : " + taroCard.name + "\n정방향 뜻 :" + taroCard.meaning_up + "\n역방향 뜻 :"+ taroCard.meaning_rev + "\n설명 :"+ taroCard.desc + "\n");
-	}
-	catch (e)
-	{
-		Log.error(e);
-	}
-}
-
-//네이버 별자리 운세
 function getAstroLogicalSign(msg, arg)
 {
 	try
@@ -910,7 +910,7 @@ function getAstroLogicalSign(msg, arg)
 		if (!value)
 			msg.reply(arg + " 별자리는 없네?");
 
-		var url = org.jsoup.Jsoup.connect("https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=0&ie=utf8&query=" + arg + "자리운세").get().select("#yearFortune > div");
+		var url = Jsoup.connect("https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=0&ie=utf8&query=" + arg + "자리운세").get().select("#yearFortune > div");
 		var year = url.select("div:nth-child(3) > div.detail.detail2._togglePanelSelectLink > p").text();
 
 		msg.reply("오늘의 "+ arg + "자리 운세🌟" + "\n\n" + year);
@@ -928,7 +928,7 @@ function getFortuneTeller(name)
 	{
 		wait(1);
 
-		var url = org.jsoup.Jsoup.connect("https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=0&ie=utf8&query=" + name + " 운세").get().select("#yearFortune > div");
+		var url = Jsoup.connect("https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=0&ie=utf8&query=" + name + " 운세").get().select("#yearFortune > div");
 		var year = url.select("div:nth-child(3) > div.detail._togglePanelSelectLink > p").text();
 		var year3 = url.select("div:nth-child(3) > dl > div:nth-child(3) > dt").get(0).text();
 		var year3Text = url.select("div:nth-child(3) > dl > div:nth-child(3) > dd").text();
@@ -993,6 +993,72 @@ function getAllZodiacFortuneTeller(msg)
 	}
 
 	getFortuneTellerNow = false;
+}
+
+function getNameChemistry(msg, content)
+{
+	var commandArgs = content.replace(".이름궁합 ", "").trim();
+	var nameCompare = commandArgs.split(",");
+
+	if (!nameCompare[1])
+		msg.reply("이름 두개가 필요해~ , 안넣은거 아니야? " + commandArgs);
+
+	var n1 = 0;
+	var n2 = 0;
+	nameCompare[0].trim().normalize("NFD").split("").map(x => n1 += nameChemistryKoreanScore[x] * 2);
+	nameCompare[1].trim().normalize("NFD").split("").map(x => n2 += nameChemistryKoreanScore[x] * 2);
+
+	var n3 = n1 + n2;
+    var n4 = (n3 > 100) ? n3 - Number(String(n3).slice(0, (String(n3).length - 1)) + "0") * 0.5 : n3;
+
+    msg.reply(nameCompare[0].trim() + (hasFinalConsonant(nameCompare[0].trim()) ? "과" : "와") + nameCompare[1].trim() +"의 이름 궁합\n궁합도 : " + ((n4 > 50) ? n4 : n4 * 2) + "%");
+}
+
+function getTaroCardWithGemini(msg) 
+{
+	try 
+	{
+		fileCheck(taroCardData);
+		
+		var taroCardList = JSON.parse(fs.read(taroCardData));
+		var location = ["정방향", "역방향"][Math.random() * 2 << 0];
+		var taro = Jsoup.connect("https://tarotapi.dev/api/v1/cards/random?n=1").ignoreContentType(!0).maxBodySize(0).method(Connection.Method.GET).execute().body();
+		var taroJson = JSON.parse(taro);
+		var taroCardName = taroJson.cards[0].name;
+		taro += "location: " + location
+
+		var idx = taroCardList.findIndex(c => c.name === taroCardName && c.location === location);
+
+		if (idx > -1)
+		{
+			msg.reply(taroCardList[idx].content);
+		}
+		else
+		{
+			var response = Jsoup.connect("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + geminiKey).ignoreContentType(!0).ignoreHttpErrors(!0).header("Content-Type", "application/json")
+			.requestBody(
+				JSON.stringify({contents: [{role: "user",parts: [{text: taro + "이 객체를 보고, 한국어 반말로 타로꾼처럼 해석을 가독성 좋게 해 줘." +
+			"형식은 다음과 같아. '🔮카드번호: n | 카드: name | 카드 방향: 정방향or역방향🔮\n\n카드 키워드: 키워드\n\n카드 해설: 해설'"}]}]})).timeout(0).method(Connection.Method.POST).execute().body();
+		
+			var responseJson = JSON.parse(response);
+			var result = responseJson.candidates[0].content.parts[0];
+
+			msg.reply(result.text);
+
+			taroCardList.push(
+			{
+				'name': taroCardName,
+				'location': location,
+				'content' : result.text
+			});
+
+			fs.write(taroCardData, JSON.stringify(taroCardList));
+		}
+	} 
+	catch(e) 
+	{
+		Log.error("error : " + e + " return :" +JSON.stringify(responseJson));
+	}
 }
 
 //메세지 왔을때
