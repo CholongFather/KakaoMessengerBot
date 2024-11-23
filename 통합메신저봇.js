@@ -23,6 +23,7 @@ var zodiac = [];
 var geminiKey = "";
 var astroLogy = {};
 var nameChemistryKoreanScore = {};
+var todayChatCount = [];
 
 var offset = 1000 * 60 * 60 * 1;
 var itRoom = "1843311789";
@@ -138,10 +139,10 @@ function onCommand(msg)
 			case "방번호" : msg.reply("우리 방 번호 : " + roomId); break;
 			case "?" :
 			case "명령" : getCommandList(msg); break;
+			case "이름궁합" : getNameChemistry(msg, content); break;
 			//TODO : 시덥잖은 농담을 저장할 수 있게.
 			case "19금" : msg.reply("20토"); break;
 			case "빨래" : msg.reply("빨래는 너가 할것"); break;
-			case "이름궁합" : getNameChemistry(msg, content); break;
 		}
 
 		if (roomId === adminRoom || roomId === itRoom)
@@ -639,6 +640,52 @@ function messageCount(room, sender, userHash, msg)
 
 	chatCountList = chatCountList.sort((a, b) => b.chat - a.chat);
 	fs.write(chatCountPath, JSON.stringify(chatCountList));
+
+	var todayChatIndex = todayChatCount.findIndex(c => c.day === date(0));
+
+	if (todayChatIndex > -1)
+	{
+		var count = room === debugRoom ? 10 : 100;
+
+		if (todayChatCount[todayChatIndex].chat % count === 0)
+		{
+			var message = "띠링~ 막내로부터 알림 도착!\n\n";
+
+			switch (todayChatCount[todayChatIndex].chat / count)
+			{
+				case 1: message += "진짜 대박이다 오늘만 챗수가 백개를 돌파하다니..."; break;
+				case 2: message += "뭐??? 2백개라고??...."; break;
+				case 3: message += "3백개.."; break;
+				case 4: message += "4백개"; break;
+				case 5: message += "5백개"; break;
+				case 6: message += "6백개"; break;
+				case 7: message += "7백개"; break;
+				case 8: message += "8백개"; break;
+				case 9: message += "9백개"; break;
+				case 10: message += "뭐??? 오늘 챗수 무슨일이야 1천개 돌파?"; break;
+				case 11: message += "뭐??? 오늘 챗수 무슨일이야 1천1백개 돌파?"; break;
+				case 12: message += "뭐??? 오늘 챗수 무슨일이야 1천2백개 돌파?"; break;
+				case 13:
+				case 14:
+				case 15:
+				case 16: message += "뭐??? 오늘 챗수 무슨일이야 " + todayChatCount[todayChatIndex].chat + "개 돌파?"; break;
+				default : message += "이 이후로는 생각 안해봤어... 이제 고만 떠들고 자...."; break;
+			}
+			
+			msg.reply(message);
+		}
+
+		todayChatCount[todayChatIndex].chat += 1;
+	}
+	else
+	{
+		todayChatCount.push(
+		{
+			'day':date(0),
+			'room':room,
+			'chat':1
+		});
+	}
 }
 
 function messageCountRank(room, msg)
@@ -913,7 +960,7 @@ function getAstroLogicalSign(msg, arg)
 		var url = Jsoup.connect("https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=0&ie=utf8&query=" + arg + "자리운세").get().select("#yearFortune > div");
 		var year = url.select("div:nth-child(3) > div.detail.detail2._togglePanelSelectLink > p").text();
 
-		msg.reply("오늘의 "+ arg + "자리 운세🌟" + "\n\n" + year);
+		msg.reply("🌟오늘의 "+ arg + "자리 운세🌟" + "\n\n" + year);
 	}
 	catch (e)
 	{
