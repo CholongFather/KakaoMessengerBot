@@ -2,6 +2,7 @@ var scriptName = '닉변 감지 봇';
 var bot = BotManager.getCurrentBot();
 var sdcardPath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
 var userHashPaths = sdcardPath + '/userHashNew.json';
+var userHashBackUpPaths = sdcardPath + '/userHashBackUp.json';
 var chatCountPath = sdcardPath + '/chatCountList.json';
 var attendancePath = sdcardPath + '/attendanceList.json';
 var fs = FileStream;
@@ -125,6 +126,20 @@ function onCommand(msg)
 			var userHashRawFile = fs.read(userHashPaths);
 
 			msg.reply(userHashRawFile);
+		}
+		else if (command === "파일백업")
+		{
+			var userHashRawList = JSON.parse(fs.read(userHashPaths));
+			fs.write(userHashBackUpPaths, JSON.stringify(userHashRawList));
+
+			msg.reply("파일 백업 완료");
+		}
+		else if (command === "파일복원")
+		{
+			var userHashRawBackUpList = JSON.parse(fs.read(userHashBackUpPaths));
+			fs.write(userHashPaths, JSON.stringify(userHashRawBackUpList));
+
+			msg.reply("파일 복원 완료");
 		}
 		else if (command === "출석부데이터")
 		{
