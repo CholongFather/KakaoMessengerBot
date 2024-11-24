@@ -130,11 +130,11 @@ function onCommand(msg)
 		{
 			var userHashList = JSON.parse(fs.read(userHashPaths));
 			var attendanceList = JSON.parse(fs.read(attendancePath));
-			var processCount = 0;
+			var processHashCount = 0;
 
 			attendanceList.forEach(e =>
 			{
-				var idx = userHashList.findIndex(c => c.userHash === e.userHash)
+				var idx = userHashList.findIndex(c => c.userHash === e.userHash);
 
 				if (idx < 0)
 				{
@@ -145,42 +145,44 @@ function onCommand(msg)
 						'date': '알수없는 먼 옛날에',
 						'count': 0
 					});
+
+					processHashCount++;
 				}
 
-				processCount++;
 			});
 
 			fs.write(userHashPaths, JSON.stringify(userHashList));
 
-			msg.reply("추가된 유저 해시 수 : " + processCount + "개");
+			msg.reply("추가된 유저 해시 수 : " + processHashCount + "개");
 		}
 		else if (command === "채팅순위데이터")
 		{
-			var userHashList = JSON.parse(fs.read(userHashPaths));
+			var userHashs = JSON.parse(fs.read(userHashPaths));
 			var charCountList = JSON.parse(fs.read(chatCountPath));
-			var processCount = 0;
+			var processDataCount = 0;
 
 			charCountList.forEach(e =>
 			{
-				var idx = userHashList.findIndex(c => c.userHash === e.userHash)
+				var idx = userHashs.findIndex(c => c.userHash === e.userHash);
 
 				if (idx < 0)
 				{
-					userHashList.push(
+					userHashs.push(
 					{
 						'userHash': e.userHash,
 						'userName': e.name,
 						'date': '알수없는 먼 옛날에',
 						'count': 0
 					});
+
+					processDataCount++;
 				}
 
-				processCount++;
 			});
 
-			fs.write(userHashPaths, JSON.stringify(userHashList));
+			fs.write(userHashPaths, JSON.stringify(userHashs));
 
-			msg.reply("추가된 유저 해시 수 : " + processCount + "개");
+			msg.reply("추가된 유저 해시 수 : " + processDataCount + "개");
 		}
 	}
 	catch (e)
