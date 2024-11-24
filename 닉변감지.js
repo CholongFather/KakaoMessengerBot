@@ -2,6 +2,8 @@ var scriptName = '닉변 감지 봇';
 var bot = BotManager.getCurrentBot();
 var sdcardPath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
 var userHashPaths = sdcardPath + '/userHashNew.json';
+var chatCountPath = sdcardPath + '/chatCountList.json';
+var attendancePath = sdcardPath + '/attendanceList.json';
 var fs = FileStream;
 var offset = 1000 * 60 * 60 * 1;
 var itRoomId = "1843311789";
@@ -123,6 +125,62 @@ function onCommand(msg)
 			var userHashRawFile = fs.read(userHashPaths);
 
 			msg.reply(userHashRawFile);
+		}
+		else if (command === "출석부데이터")
+		{
+			var userHashList = JSON.parse(fs.read(userHashPaths));
+			var attendanceList = JSON.parse(fs.read(attendancePath));
+			var processCount = 0;
+
+			attendanceList.forEach(e =>
+			{
+				var idx = userHashList.findIndex(c => c.userHash === e.userHash)
+
+				if (idx < 0)
+				{
+					userHashList.push(
+					{
+						'userHash': e.userHash,
+						'userName': e.name,
+						'date': '알수없는 먼 옛날에',
+						'count': 0
+					});
+				}
+
+				processCount++;
+			});
+
+			fs.write(userHashPaths, JSON.stringify(userHashList));
+
+			msg.reply("추가된 유저 해시 수 : " + processCount + "개");
+		}
+		else if (command === "채팅순위데이터")
+		{
+			var userHashList = JSON.parse(fs.read(userHashPaths));
+			var charCountList = JSON.parse(fs.read(chatCountPath));
+			var processCount = 0;
+
+			charCountList.forEach(e =>
+			{
+				var idx = userHashList.findIndex(c => c.userHash === e.userHash)
+
+				if (idx < 0)
+				{
+					userHashList.push(
+					{
+						'userHash': e.userHash,
+						'userName': e.name,
+						'date': '알수없는 먼 옛날에',
+						'count': 0
+					});
+				}
+
+				processCount++;
+			});
+
+			fs.write(userHashPaths, JSON.stringify(userHashList));
+
+			msg.reply("추가된 유저 해시 수 : " + processCount + "개");
 		}
 	}
 	catch (e)
