@@ -268,6 +268,14 @@ function getTimeStampToDateTime(timestamp)
 	return String(date.getFullYear()) + '-' + String(date.getMonth() + 1) + '-' + String(date.getDate() + ' ' + date.getHours()) + ':' + String(date.getMinutes());
 }
 
+function getTimeStampCompare(timestamp, compareDate)
+{
+	if (Number(timestamp) > Number(compareDate))
+		return true;
+	else
+		return false;
+}
+
 function getStaticFile()
 {
 	fileCheck(botData);
@@ -705,11 +713,15 @@ function messageCountRank(room, msg)
 	}
 
 	var chatRankResponse = '전체 채팅순위' + ''.repeat(500) + '\n기록 시간 : ' + chatStart[0].date + '\n';
+	var rank = 1;
 
 	for (n in chatCountListByRoom)
 	{
-		if (chatCountListByRoom[n].lastChat)
-			chatRankResponse += '[' + rank(Number(n) + 1) + '] ' + chatCountListByRoom[n].sender + ' : ' + chatCountListByRoom[n].chat + ', 마지막 챗 : ' + getTimeStampToDateTime(chatCountListByRoom[n].lastChat) + '\n';
+		if (!chatCountListByRoom[n].lastChat)
+			continue;
+
+		if (getTimeStampCompare(chatCountListByRoom[n].lastChat, (Date.now() + (-1 * 24 * 60 * 60 * 1000))))
+			chatRankResponse += '[' + rank(Number(rank++)) + '] ' + chatCountListByRoom[n].sender + ' : ' + chatCountListByRoom[n].chat + ', 마지막 챗 : ' + getTimeStampToDateTime(chatCountListByRoom[n].lastChat) + '\n';
 	}
 
 	chatRankResponse = chatRankResponse.slice(0, chatRankResponse.length - 1);
