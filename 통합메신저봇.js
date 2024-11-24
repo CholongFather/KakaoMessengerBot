@@ -298,15 +298,13 @@ function rank(num)
 {
 	switch (num)
 	{
-		case 1:
-			return '🥇';
-		case 2:
-			return '🥈';
-		case 3:
-			return '🥉';
+		case 1: return '❤️1';
+		case 2: return '🧡2';
+		case 3: return '💛3';
+		case 4: return '💚4';
+		case 5: return '💙5';
+		default : return '💜' + num;
 	}
-
-	return num + '위';
 }
 
 //파일 체크
@@ -713,7 +711,7 @@ function messageCountRank(room, msg)
 	}
 
 	var chatRankResponse = '전체 채팅순위' + ''.repeat(500) + '\n기록 시간 : ' + chatStart[0].date + '\n';
-	var rank = 1;
+	var rankIndex = 1;
 
 	for (n in chatCountListByRoom)
 	{
@@ -721,7 +719,7 @@ function messageCountRank(room, msg)
 			continue;
 
 		if (getTimeStampCompare(chatCountListByRoom[n].lastChat, (Date.now() + (-1 * 24 * 60 * 60 * 1000))))
-			chatRankResponse += '[' + rank(Number(rank++)) + '] ' + chatCountListByRoom[n].sender + ' : ' + chatCountListByRoom[n].chat + ', 마지막 챗 : ' + getTimeStampToDateTime(chatCountListByRoom[n].lastChat) + '\n';
+			chatRankResponse += '[' + rank(rankIndex++) + '] ' + chatCountListByRoom[n].sender + ' : ' + chatCountListByRoom[n].chat + ', 마지막 챗 : ' + getTimeStampToDateTime(chatCountListByRoom[n].lastChat) + '\n';
 	}
 
 	chatRankResponse = chatRankResponse.slice(0, chatRankResponse.length - 1);
