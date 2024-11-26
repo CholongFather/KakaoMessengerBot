@@ -299,19 +299,19 @@ function rank(num)
 
 	switch (num)
 	{
-		case 1: emoji = '❤️';
-		case 2: emoji = '🧡' ;
-		case 3: emoji = '💛';
-		case 4: emoji = '💚';
-		case 5: emoji = '💙';
-		case 6: emoji = '💜';
-		case 7: emoji = '🤍';
-		case 8: emoji = '💕';
-		case 9: emoji = '💗';
-		case 10: emoji = '💘';
+		case 1: emoji = '❤️'; break;
+		case 2: emoji = '🧡'; break;
+		case 3: emoji = '💛'; break;
+		case 4: emoji = '💚'; break;
+		case 5: emoji = '💙'; break;
+		case 6: emoji = '💜'; break;
+		case 7: emoji = '🤍'; break;
+		case 8: emoji = '💕'; break;
+		case 9: emoji = '💗'; break;
+		case 10: emoji = '💘'; break;
 	}
 
-	return emoji + num + emoji;
+	return emoji + num;
 }
 
 //파일 체크
@@ -333,13 +333,13 @@ function trimLastSpace(text)
 //보이스룸 시작 알림
 function voiceRoomStart(msg, sender)
 {
-	msg.reply(sender + (hasFinalConsonant(sender) ? "이" : "가") + " 🎤보이스룸🎤 시작. 🤟");
+	msg.reply(sender + (hasFinalConsonant(sender) ? "이" : "가") + " 🎤보이스룸 시작. 🤟");
 }
 
 //보이스룸 종료 알림
 function voiceRoomEnd(msg, sender)
 {
-	msg.reply(sender + (hasFinalConsonant(sender) ? "이" : "가") + " 🎤보이스룸🎤 종료. ✨");
+	msg.reply(sender + (hasFinalConsonant(sender) ? "이" : "가") + " 🎤보이스룸 종료. ✨");
 }
 
 //입장 감지 인사
@@ -361,20 +361,20 @@ function hasFinalConsonant(str)
 
 function getGlobalTimeList(msg)
 {
-	var timeList = "⌚ 현재 시간 ⌚ : \n ------------------------------- \n";
-	timeList += "🕛 멕시코 : " + getLocationDateTime(offset * -14)+ '\n';
-	timeList += "🕐 캐나다 토론토 : " + getLocationDateTime(offset * -13)+ '\n';
-	timeList += "🕜 미국 (동부 표준) : " + getLocationDateTime(offset * -13)+ '\n';
-	timeList += "🕝 브라질 : " + getLocationDateTime(offset * -12)+ '\n';
-	timeList += "🕞 영국 : " + getLocationDateTime(offset * -8)+ '\n';
-	timeList += "🕠 포르투갈 : " + getLocationDateTime(offset * -8)+ '\n';
-	timeList += "🕤 프랑스, 네덜란드, 스위스, 헝가리 : " + getLocationDateTime(offset * -7)+ '\n';
-	timeList += "🕥 우크라이나 : " + getLocationDateTime(offset * -6)+ '\n';
-	timeList += "🕙 터키 : " + getLocationDateTime(offset * -5)+ '\n';
-	timeList += "🕛 인도 : " + getLocationDateTime(offset * -2)+ '\n';
-	timeList += "🕐 중국, 말레이시아 : " + getLocationDateTime(offset * 0)+ '\n';
-	timeList += "🕑 한국 : " + getLocationDateTime(offset * 1)+ '\n';
-	timeList += "🕒 호주 : " + getLocationDateTime(offset * 3);
+	var timeList = "⌚현재 시간:\n -------------------------- \n";
+	timeList += "🕛멕시코: " + getLocationDateTime(offset * -14)+ '\n';
+	timeList += "🕐캐나다 토론토: " + getLocationDateTime(offset * -13)+ '\n';
+	timeList += "🕜미국 (동부): " + getLocationDateTime(offset * -13)+ '\n';
+	timeList += "🕝브라질: " + getLocationDateTime(offset * -12)+ '\n';
+	timeList += "🕞영국: " + getLocationDateTime(offset * -8)+ '\n';
+	timeList += "🕠포르투갈: " + getLocationDateTime(offset * -8)+ '\n';
+	timeList += "🕤프랑스,네덜란드,스위스,헝가리: " + getLocationDateTime(offset * -7)+ '\n';
+	timeList += "🕥우크라이나: " + getLocationDateTime(offset * -6)+ '\n';
+	timeList += "🕙터키: " + getLocationDateTime(offset * -5)+ '\n';
+	timeList += "🕛인도: " + getLocationDateTime(offset * -2)+ '\n';
+	timeList += "🕐중국,말레이시아: " + getLocationDateTime(offset * 0)+ '\n';
+	timeList += "🕑한국: " + getLocationDateTime(offset * 1)+ '\n';
+	timeList += "🕒호주: " + getLocationDateTime(offset * 3);
 
 	msg.reply(timeList);
 }
@@ -390,7 +390,7 @@ function earnPoint(room, msg, sender, userHash, point)
 	{
 		chatPointList[chatPointIndex].point += point;
 		chatPointList[chatPointIndex].name = sender;
-		msg.reply(sender + " 포인트 획득 : " + point + ", 현재 포인트 : " + chatPointList[chatPointIndex].point);
+		msg.reply(sender + " 포인트🗝️ 획득 : " + point + ", 현재 포인트 : " + chatPointList[chatPointIndex].point);
 	}
 	else
 	{
@@ -402,7 +402,7 @@ function earnPoint(room, msg, sender, userHash, point)
 			'point': point
 		});
 
-		msg.reply(sender + " 포인트 🗝️ 획득 : " + point + ", 현재 포인트 : " + point);
+		msg.reply(sender + " 포인트🗝️ 획득 : " + point + ", 현재 포인트 : " + point);
 	}
 
 	fs.write(chatPointPath, JSON.stringify(chatPointList));
@@ -456,7 +456,7 @@ function getPointList(roomId, msg, roomName)
 
 	var chatPointList = JSON.parse(fs.read(chatPointPath));
 	var chatPointListByRoom = chatPointList.filter(n => n.room === roomId);
-	var chatPointListByRoomReply = "전체 포인트 🗝️ 리스트 : \n";
+	var chatPointListByRoomReply = "전체 포인트🗝️ 리스트 : \n";
 
 	if (chatPointListByRoom.length !== 0)
 	{
@@ -476,7 +476,7 @@ function pickVersusText(msg)
 	var message = msg.content;
 	var array = message.split("vs");
 
-	msg.reply("🆚 결과! : " + array[Math.floor(Math.random() * array.length)].trim() + " ✔️");
+	msg.reply(message + " 결과는 !! " + array[Math.floor(Math.random() * array.length)].trim());
 }
 
 function getPhoneStatus(msg, roomName)
@@ -484,7 +484,7 @@ function getPhoneStatus(msg, roomName)
 	if (checkAdmin(roomName) == false)
 		return;
 
-	msg.reply(botName + " 배터리 🔋 : " + Device.getBatteryLevel() + "%\n어제 : " + date(-1) + "\n오늘 : " + date(0) + "\n시간 : " + time());
+	msg.reply(botName + " 배터리🔋 : " + Device.getBatteryLevel() + "%\n어제 : " + date(-1) + "\n오늘 : " + date(0) + "\n시간 : " + time());
 }
 
 function getSearchWord(msg)
@@ -492,7 +492,7 @@ function getSearchWord(msg)
 	var searchWordUrl = "https://api.signal.bz/news/realtime";
 	var searchWordResponse = Jsoup.connect(searchWordUrl).ignoreContentType(true).ignoreHttpErrors(true).get().wholeText();
 	var searchWordData = JSON.parse(searchWordResponse);
-	var replySearchWord = "🏅실시간 검색어 Top 10🏅" + "\n";
+	var replySearchWord = "🏅실시간 검색어 Top10" + "\n";
 
 	for (var i in searchWordData["top10"])
 	{
@@ -510,28 +510,28 @@ function fileReset(msg, args, userHash)
 	if (args[0] == '출석부')
 	{
 		fs.write(attendancePath, JSON.stringify([]));
-		msg.reply('🧨출석부 초기화 완료🧨');
+		msg.reply('🧨출석부 초기화 완료');
 	}
 	else if (args[0] == '자소서')
 	{
 		fs.write(personalStatementPath, JSON.stringify([]));
-		msg.reply('🧨자소서 초기화 완료🧨');
+		msg.reply('🧨자소서 초기화 완료');
 	}
 	else if (args[0] == '채팅순위')
 	{
 		fs.write(chatCountPath, JSON.stringify([]));
 		fs.write(chatStartPath, JSON.stringify([]));
-		msg.reply('🧨채팅순위 초기화 완료🧨');
+		msg.reply('🧨채팅순위 초기화 완료');
 	}
 	else if (args[0] == '운세')
 	{
 		fs.write(zodiacFortuneTellerPath, JSON.stringify([]));
-		msg.reply('🧨운세 초기화 완료🧨');
+		msg.reply('🧨운세 초기화 완료');
 	}
 	else if (args[0] == '타로')
 	{
 		fs.write(taroCardData, JSON.stringify([]));
-		msg.reply('🧨타로 초기화 완료🧨');
+		msg.reply('🧨타로 초기화 완료');
 	}
 	else
 	{
@@ -599,7 +599,7 @@ function attendanceRegisterList(msg, room, today)
 		return;
 	}
 
-	var attendanceListResponse = '🙌우리방 출석부🙌' + ''.repeat(500) + '\n\n';
+	var attendanceListResponse = '🙌우리방 출석부' + ''.repeat(500) + '\n\n';
 
 	for (n in attendanceListByRoom)
 	{
@@ -658,7 +658,7 @@ function messageCount(room, sender, userHash, msg)
 
 		if (todayChatCount[todayChatIndex].chat % count === 0)
 		{
-			var message = "띠링~ ❗❗ "+ botName +"🧖로부터 알림💬 도착!\n\n오늘 우리방 챗수 🗨️ " + todayChatCount[todayChatIndex].chat + "건 돌파 💯";
+			var message = "띠링~"+ botName +"🧖로부터 알림 도착!\n\n오늘 우리방 챗수 🗨️ " + todayChatCount[todayChatIndex].chat + "건 돌파 💯";
 			
 			msg.reply(message);
 		}
@@ -692,7 +692,7 @@ function messageCountRank(room, msg)
 		return;
 	}
 
-	var chatRankResponse = '#️⃣전체 채팅순위' + ''.repeat(500) + '#️⃣\n⏰ 기록 시간 : ' + chatStart[0].date + '\n';
+	var chatRankResponse = '#️⃣전체 채팅순위' + ''.repeat(500) + '\n⏰기록 시간 : ' + chatStart[0].date + '\n';
 	var rankIndex = 1;
 
 	for (n in chatCountListByRoom)
@@ -878,13 +878,13 @@ function diceGame(msg, args)
 	if (maxInput)
 		max = maxInput;
 
-	msg.reply("🎲 주사위 결과 🎲 : " + (Math.floor(Math.random() * max) + 1));
+	msg.reply("🎲주사위 결과 : " + (Math.floor(Math.random() * max) + 1));
 }
 
 //동전 뒤집기
 function coinFlipGame(msg)
 {
-	var coin = ["🤚 앞이", "✋ 뒤가"][Math.floor(Math.random() * 2)];
+	var coin = ["🤚앞이", "✋뒤가"][Math.floor(Math.random() * 2)];
 	msg.reply(coin + " 나왔다!");
 }
 
@@ -894,28 +894,28 @@ function upDownGame(msg, args, sender, room)
 	if (args[0] === "시작")
 	{
 		if (upDownNumber.hasOwnProperty(room))
-			msg.reply("이미 업다운 👆👇 게임이 진행중.");
+			msg.reply("이미 업다운👆👇 게임이 진행중.");
 		else
 		{
 			var max = upDownMax;
 			upDownNumber[room] = Math.floor(Math.random() * max) + 1;
-			msg.reply("업다운 👆👇 게임 시작.\n범위 : 1 ~ " + max);
+			msg.reply("업다운👆👇 게임 시작.\n범위 : 1 ~ " + max);
 		}
 	}
 	else if (args[0] === "종료")
 	{
 		if (upDownNumber.hasOwnProperty(room))
 		{
-			msg.reply("진행중인 업다운 👆👇 게임이 종료. 정답 : " + upDownNumber[room]);
+			msg.reply("진행중인 업다운👆👇 게임이 종료. 정답 : " + upDownNumber[room]);
 			delete upDownNumber[room];
 		}
 		else
-			msg.reply("진행중인 업다운 👆👇 게임이 없어.");
+			msg.reply("진행중인 업다운👆👇 게임이 없어.");
 	}
 	else if (args[0] === "세팅")
 	{
 		upDownMax = Number(args[1]);
-		msg.reply("업다운 👆👇 최대 : 1 ~" + upDownMax);
+		msg.reply("업다운👆👇 최대 : 1 ~" + upDownMax);
 	}
 	else
 	{
@@ -930,12 +930,12 @@ function upDownGame(msg, args, sender, room)
 		if (upDownNumber[room] == input)
 		{
 			delete upDownNumber[room];
-			msg.reply(sender + "이(가) 정답! 업다운 👆👇 게임이 종료.");
+			msg.reply(sender + "이(가) 정답! 업다운👆👇 게임이 종료.");
 		}
 		else if (upDownNumber[room] > input)
-			msg.reply("👆 업!");
+			msg.reply("👆업!");
 		else
-			msg.reply("👇 다운!");
+			msg.reply("👇다운!");
 	}
 }
 
@@ -947,12 +947,15 @@ function getAstroLogicalSign(msg, arg)
 		var value = astroLogy[arg];
 
 		if (!value)
+		{
 			msg.reply(arg + " 별자리✴️는 없네?");
+			return;
+		}
 
 		var url = Jsoup.connect("https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=0&ie=utf8&query=" + arg + "자리운세").get().select("#yearFortune > div");
 		var year = url.select("div:nth-child(3) > div.detail.detail2._togglePanelSelectLink > p").text();
 
-		msg.reply("🌟오늘의 ✴️"+ arg + "✴️ 자리 운세🌟" + "\n\n" + year);
+		msg.reply("🌟오늘의 "+ arg + "자리 운세🌟" + "\n\n" + year);
 	}
 	catch (e)
 	{
@@ -1017,7 +1020,7 @@ function getAllZodiacFortuneTeller(msg)
 	}
 	else
 	{
-		msg.reply("오늘의 운세 🐭🐮🦁🐰🐉🐍🐴🐑🐵🐓🐶🐷 가져오는 중....");
+		msg.reply("🐭🐮🦁🐰🐉🐍🐴🐑🐵🐓🐶🐷 오늘의 운세 가져오는 중....");
 		getFortuneTellerNow = true;
 
 		var contents = "";
@@ -1055,7 +1058,7 @@ function getNameChemistry(msg, content)
 	var n3 = n1 + n2;
     var n4 = (n3 > 100) ? n3 - Number(String(n3).slice(0, (String(n3).length - 1)) + "0") * 0.5 : n3;
 
-    msg.reply(nameCompare[0].trim() + (hasFinalConsonant(nameCompare[0].trim()) ? "과" : "와") + nameCompare[1].trim() +"의 이름 궁합\n궁합도 : " + ((n4 > 50) ? n4 : n4 * 2) + "%");
+    msg.reply(nameCompare[0].trim() + (hasFinalConsonant(nameCompare[0].trim()) ? "과 " : "와 ") + nameCompare[1].trim() +"의 이름 궁합\n궁합도 : " + ((n4 > 50) ? n4 : n4 * 2) + "%");
 }
 
 function getTaroCardWithGemini(msg) 
@@ -1082,7 +1085,7 @@ function getTaroCardWithGemini(msg)
 			var response = Jsoup.connect("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + geminiKey).ignoreContentType(!0).ignoreHttpErrors(!0).header("Content-Type", "application/json")
 			.requestBody(
 				JSON.stringify({contents: [{role: "user",parts: [{text: taro + "이 객체를 보고, 한국어 반말로 타로꾼처럼 해석을 가독성 좋게 해 줘." +
-			"형식은 다음과 같아. '🔮🃏카드번호: n | 카드: name | 카드 방향: 정방향or역방향🃏🔮\n\n카드 키워드: 키워드\n\n카드 해설: 해설'"}]}]})).timeout(0).method(Connection.Method.POST).execute().body();
+			"형식은 다음과 같아. '🔮카드번호: n | 카드: name | 카드 방향: 정방향or역방향\n\n카드 키워드: 키워드\n\n카드 해설: 해설'"}]}]})).timeout(0).method(Connection.Method.POST).execute().body();
 		
 			var responseJson = JSON.parse(response);
 			var result = responseJson.candidates[0].content.parts[0];
@@ -1113,7 +1116,7 @@ function getTodayMeal(msg, args)
 	var responseJson = JSON.parse(response);
 	var result = responseJson.candidates[0].content.parts[0];
 
-	msg.reply("🍺🥧🍣 " + result.text + " 🎂🍵🥟");
+	msg.reply(args[0] + " 추천 메뉴는 : " + result.text);
 }
 
 //메세지 왔을때
