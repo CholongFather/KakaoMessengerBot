@@ -855,7 +855,7 @@ function getAllPersonalStatement(msg, roomName)
 	var personalStatementList = JSON.parse(fs.read(personalStatementPath));
 	var returnpersonalStatementList = "전체 자소서📜 수 : " + personalStatementList.length + "\n";
 
-	personalStatementList.sort(function(a, b) 
+	personalStatementList = personalStatementList.sort(function(a, b) 
 	{
 		return a.name - b.name;
 	});
