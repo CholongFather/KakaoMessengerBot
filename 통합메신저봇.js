@@ -24,6 +24,7 @@ var geminiKey = "";
 var astroLogy = {};
 var nameChemistryKoreanScore = {};
 var todayChatCount = [];
+var todayCelebrityCount = [];
 
 var offset = 1000 * 60 * 60 * 1;
 var itRoom = "1843311789";
@@ -81,6 +82,22 @@ function onMessage(msg)
 					bot.send(adminRoomName, sender + " : " + message.replace("@운영진 ", ""));
 				else
 					msg.reply("지금은 " + botName + "🧖가 운영진 호출이 불가해 ⚠️");
+			}
+			else if (message.includes("변우석"))
+			{
+				var todayCelebrityIndex = todayCelebrityCount.findIndex(c => c.day === date(0));
+
+				if (todayCelebrityIndex > -1)
+					todayCelebrityCount[todayCelebrityIndex].chat += 1;
+				else
+				{
+					todayCelebrityCount.push(
+					{
+						'day':date(0),
+						'room':room,
+						'chat':1
+					});
+				}
 			}
 			else
 			{
@@ -141,7 +158,9 @@ function onCommand(msg)
 			case "명령" : getCommandList(msg); break;
 			case "이름궁합" : getNameChemistry(msg, content); break;
 			case "추천" : getTodayMeal(msg, args); break;
-			case "19금" : msg.reply("18목"); break;
+			case "검색" : getGeminiSearch(msg); break;
+			case "19금" : msg.reply("너무 야해요."); break;
+			case "변우석" : getCelebrityCount(msg); break;
 		}
 
 		if (roomId === adminRoom || roomId === itRoom)
@@ -185,7 +204,7 @@ function getCommandList(msg)
 	commandList += "띠별 운세 : .ㅇㅅ, .운세\n";
 	commandList += "별자리 운세 : .별 (자리)\n";
 	commandList += "타로 카드 : .타로\n";
-	commandList += "ㅅㅅ추천 : .추천 (아침, 점심, 저녁, 양식)\n";
+	commandList += "메뉴추천 : .추천 (아침, 점심, 저녁, 양식)\n";
 	commandList += "이름 궁합 : .이름궁합 (A), (B)\n";
 	commandList += "현재 시간 : .ㅅㄱ .시간\n";
 	commandList += "자소서 보기 : .소개 (닉네임 ex. 누구 남)\n";
@@ -197,6 +216,7 @@ function getCommandList(msg)
 	commandList += "업다운 게임 : .ㅇ 시작, .업다운 시작, .종료, .업다운 종료, .ㅇ (숫자), .업다운 (숫자)\n";
 	commandList += "주사위 던지기 : .ㅈ, .주사위 (+ 숫자)\n";
 	commandList += "방 이름 확인 : .방이름\n";
+	commandList += "검색 : .검색 (검색할 내용)\n";
 	commandList += "운영진 호출 : @운영진 할말";
 
 	msg.reply(commandList);
@@ -1117,6 +1137,27 @@ function getTodayMeal(msg, args)
 	var result = responseJson.candidates[0].content.parts[0];
 
 	msg.reply(args[0] + " 추천 메뉴는 : " + result.text);
+}
+
+function getGeminiSearch(msg)
+{
+	var msg = msg.replace(".검색", "");
+
+	var response = Jsoup.connect("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + geminiKey).ignoreContentType(!0).ignoreHttpErrors(!0).header("Content-Type", "application/json")
+	.requestBody(JSON.stringify({contents: [{role: "user",parts: [{text: msg}]}]})).timeout(0).method(Connection.Method.POST).execute().body();
+
+	var responseJson = JSON.parse(response);
+	var result = responseJson.candidates[0].content.parts[0];
+
+	msg.reply(" 제미나이 검색 : " + result.text);
+}
+
+function getCelebrityCount(msg)
+{
+	var todayCelebrityIndex = todayCelebrityCount.findIndex(c => c.day === date(0));
+
+	if (todayCelebrityIndex > -1)
+		msg.reply("오늘 변우석 총 언급 수 : " + todayCelebrityCount[todayCelebrityIndex].chat);
 }
 
 //메세지 왔을때
