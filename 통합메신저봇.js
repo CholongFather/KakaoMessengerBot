@@ -25,6 +25,10 @@ var astroLogy = {};
 var nameChemistryKoreanScore = {};
 var todayChatCount = [];
 var todayCelebrityCount = [];
+var typingGameSentence = "";
+var typingGameStart = Date.now();
+var isTypingGameNow = false;
+var typingGameWinner = [];
 
 var offset = 1000 * 60 * 60 * 1;
 var itRoom = "1843311789";
@@ -101,6 +105,9 @@ function onMessage(msg)
 			}
 			else
 			{
+				if (isTypingGameNow && typingGameSentence === message)
+					winTypingGameSentence(msg, sender);
+
 				attendance(msg, roomId, sender, userHash, date(0), date(-1), time());
 				messageCount(roomId, sender, userHash, msg);
 			}
@@ -163,6 +170,7 @@ function onCommand(msg)
 			case "로또번호" : getLottoNumber(msg); break;
 			case "로또당첨번호" : getWinnerLottoNumber(msg); break;
 			case "변우석" : getCelebrityCount(msg); break;
+			case "타자게임" : startTypingGame(msg, args); break;
 		}
 
 		if (roomId === adminRoom || roomId === itRoom)
@@ -215,14 +223,15 @@ function getCommandList(msg)
 	commandList += "출석부 보기 : .출석부\n";
 	commandList += "존대 규칙 : .존대\n";
 	commandList += "동전 던지기 : .ㄷ, .동전\n";
-	commandList += "업다운 게임 : .ㅇ 시작, .업다운 시작, .종료, .업다운 종료, .ㅇ (숫자), .업다운 (숫자)\n";
 	commandList += "주사위 던지기 : .ㅈ, .주사위 (+ 숫자)\n";
+	commandList += "업다운 게임 : .ㅇ 시작, .업다운 시작, .종료, .업다운 종료, .ㅇ (숫자), .업다운 (숫자)\n";
+	commandList += "타자 게임 : .타자게임 (문구 길이)\n";
 	commandList += "방 이름 확인 : .방이름\n";
 	commandList += "검색 : .검색 (검색할 내용)\n";
 	commandList += "로또 번호 : .로또번호\n";
 	commandList += "로또 당첨 번호 : .로또당첨번호\n";
 	commandList += "변우석 감지 : .변우석\n";
-	commandList += "운영진 호출 : @운영진 할말";
+	commandList += "**운영진 호출 : @운영진 할말**";
 
 	msg.reply(commandList);
 }
@@ -306,8 +315,6 @@ function getStaticFile()
 	fileCheck(botData);
 
 	var botDataList = JSON.parse(fs.read(botData))[0];
-
-	Log.info(JSON.stringify(botDataList));
 
 	geminiKey = botDataList.geminiKey;
 	zodiac = botDataList.zodiac;
@@ -1209,6 +1216,69 @@ function getWinnerLottoNumber(msg)
 		msg.reply("로또 번호를 가져오는데 실패 했어");
         Log.error(e);
     }
+}
+
+function startTypingGame(msg, args)
+{
+	if (isTypingGameNow)
+	{
+		msg.reply("이미 게임 시작했어 빨리 문구를 쳐줘");
+		return;
+	}
+
+	args.push("적당하게");
+
+	var response = Jsoup.connect("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + geminiKey).ignoreContentType(!0).ignoreHttpErrors(!0).header("Content-Type", "application/json").requestBody(JSON.stringify({contents: [{role: "user",parts: [{text: "지금 부터 타자게임을 할건데 랜덤하게 문구만 " + args[0] + " 딱 하나 추천해줘"}]}]})).timeout(0).method(Connection.Method.POST).execute().body();
+
+	var responseJson = JSON.parse(response);
+	var result = responseJson.candidates[0].content.parts[0];
+
+	msg.reply("타자 게임 문구 시작!\n" + result.text.trim());
+
+	isTypingGameNow = true;
+	typingGameSentence = result.text.trim();
+	typingGameStart = Date.now();
+	typingGameWinner = [];
+
+	setTimeout(() => 
+	{
+		if (typingGameWinner.length === 0)
+		{
+			msg.reply("타자게임 종료");
+		}
+		else
+		{
+			var winnerList = "타자 게임 종료.\n타자 게임 문구 : " + typingGameSentence + "\n";
+
+			typingGameWinner.forEach(e =>
+			{
+				winnerList += e.name + " : " + ((Number(e.time) - Number(typingGameStart))/1000) + " 초";
+			});
+
+			msg.reply(winnerList);
+		}
+
+		isTypingGameNow = false;
+		typingGameSentence = "";
+		typingGameStart = Date.now();
+		typingGameWinner = [];
+	}, 30000);
+}
+
+function winTypingGameSentence(msg, sender)
+{
+	var idx = typingGameWinner.findIndex(c => c.name === sender);
+
+	if (idx < 0)
+	{
+		msg.reply(sender + " 정답!");
+
+		typingGameWinner.push(
+		{
+			"name":sender,
+			"time":Date.now()
+		});
+	}
 }
 
 //메세지 왔을때
