@@ -94,7 +94,7 @@ function onMessage(msg)
 					todayCelebrityCount.push(
 					{
 						'day':date(0),
-						'room':room,
+						'room':roomId,
 						'chat':1
 					});
 				}
@@ -160,6 +160,8 @@ function onCommand(msg)
 			case "추천" : getTodayMeal(msg, args); break;
 			case "검색" : getGeminiSearch(msg); break;
 			case "19금" : msg.reply("너무 야해요."); break;
+			case "로또번호" : getLottoNumber(msg); break;
+			case "로또당첨번호" : getWinnerLottoNumber(msg); break;
 			case "변우석" : getCelebrityCount(msg); break;
 		}
 
@@ -217,6 +219,9 @@ function getCommandList(msg)
 	commandList += "주사위 던지기 : .ㅈ, .주사위 (+ 숫자)\n";
 	commandList += "방 이름 확인 : .방이름\n";
 	commandList += "검색 : .검색 (검색할 내용)\n";
+	commandList += "로또 번호 : .로또번호\n";
+	commandList += "로또 당첨 번호 : .로또당첨번호\n";
+	commandList += "변우석 감지 : .변우석\n";
 	commandList += "운영진 호출 : @운영진 할말";
 
 	msg.reply(commandList);
@@ -382,6 +387,7 @@ function hasFinalConsonant(str)
 function getGlobalTimeList(msg)
 {
 	var timeList = "⌚현재 시간:\n -------------------------- \n";
+	timeList += "🕜미국 (서부): " + getLocationDateTime(offset * -16)+ '\n';
 	timeList += "🕛멕시코: " + getLocationDateTime(offset * -14)+ '\n';
 	timeList += "🕐캐나다 토론토: " + getLocationDateTime(offset * -13)+ '\n';
 	timeList += "🕜미국 (동부): " + getLocationDateTime(offset * -13)+ '\n';
@@ -1141,15 +1147,13 @@ function getTodayMeal(msg, args)
 
 function getGeminiSearch(msg)
 {
-	var msg = msg.replace(".검색", "");
-
-	var response = Jsoup.connect("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + geminiKey).ignoreContentType(!0).ignoreHttpErrors(!0).header("Content-Type", "application/json")
-	.requestBody(JSON.stringify({contents: [{role: "user",parts: [{text: msg}]}]})).timeout(0).method(Connection.Method.POST).execute().body();
+	var content = msg.content.replace(".검색", "");
+	var response = Jsoup.connect("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + geminiKey).ignoreContentType(!0).ignoreHttpErrors(!0).header("Content-Type", "application/json").requestBody(JSON.stringify({contents: [{role: "user",parts: [{text: content}]}]})).timeout(0).method(Connection.Method.POST).execute().body();
 
 	var responseJson = JSON.parse(response);
 	var result = responseJson.candidates[0].content.parts[0];
 
-	msg.reply(" 제미나이 검색 : " + result.text);
+	msg.reply("검색 결과 : " + result.text);
 }
 
 function getCelebrityCount(msg)
@@ -1158,6 +1162,53 @@ function getCelebrityCount(msg)
 
 	if (todayCelebrityIndex > -1)
 		msg.reply("오늘 변우석 총 언급 수 : " + todayCelebrityCount[todayCelebrityIndex].chat);
+	else
+		msg.reply("오늘 변우석 총 언급 수 : 없음");
+}
+
+function getLottoNumber(msg)
+{
+    var numbers = [];
+
+    while (numbers.length < 6) 
+	{
+        var num = Math.floor(Math.random() * 45) + 1;
+
+        if (numbers.indexOf(num) === -1)
+            numbers.push(num);
+    }
+
+    numbers.sort(function(a, b) { return a - b; });
+
+	msg.reply("🎰 로또 6/45\n추천 번호 : " + numbers.join(", "));
+}
+
+function getWinnerLottoNumber(msg)
+{
+    try 
+	{
+        var url = "https://dhlottery.co.kr/gameResult.do?method=byWin";
+        var doc = org.jsoup.Jsoup.connect(url).get();
+        
+        var roundText = doc.select(".win_result h4 strong").text().replace("회", "");
+        var numbers = doc.select(".nums .win span");
+        var winningNumbers = [];
+
+        for (var i = 0; i < numbers.size(); i++) 
+		{
+            winningNumbers.push(parseInt(numbers.get(i).text()));
+        }
+        
+        var bonusNumber = doc.select(".nums .bonus span").text();
+        var drawDate = doc.select(".win_result .desc").text();
+        
+		msg.reply(roundText + "회차 로또 번호 : " + winningNumbers.join(", ") + ", 보너스 번호 : " + bonusNumber + "\n추첨일 : " + drawDate);
+    } 
+	catch (e) 
+	{
+		msg.reply("로또 번호를 가져오는데 실패 했어");
+        Log.error(e);
+    }
 }
 
 //메세지 왔을때
