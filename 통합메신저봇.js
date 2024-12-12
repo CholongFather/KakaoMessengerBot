@@ -11,6 +11,7 @@ var personalStatementPath = sdcardPath + '/personalStatementList.json';
 var zodiacFortuneTellerPath = sdcardPath + '/zodiacFortuneTeller.json';
 var botData = sdcardPath + '/botData.json';
 var taroCardData = sdcardPath + '/taroCard.json';
+var currentRoomUserData = sdcardPath + '/currentRoomUser.json';
 var fs = FileStream;
 var bot = BotManager.getCurrentBot();
 var upDownNumber = {};
@@ -189,15 +190,35 @@ function onCommand(msg)
 				case "초기화": fileReset(msg, args, userHash); break;
 				case "상태" :
 				case "막내상태" : getPhoneStatus(msg, roomName); break;
+				case "자소서":
+				{
+					if (content.includes("저장"))
+						savePersonalStatement(msg, content, userHash);
+					else if (content.includes("삭제"))
+						deletePersonalStatement(msg, content, userHash);
+					else if (content.includes("가리기"))
+						hiddenPersonalStatement(msg, content, userHash);
+					else if (content.includes("살리기"))
+						showPersonalStatement(msg, content, userHash);
+
+					break;
+				}
+				case "포인트":
+				{
+					if (content.includes("사용"))
+						usePoint(mainRoom, msg, userHash);
+				}
+				case "방인원":
+				{
+					if (content.includes("추가"))
+						addCurrentRoomUser(msg, roomId, userHash);
+					else if (content.includes("삭제"))
+						removeCurrentRoomUser(msg, roomId, userHash);
+				}
 			}
 		}
 
-		if (content.includes("자소서") && content.includes("저장"))
-			savePersonalStatement(msg, content, userHash);
-		else if (content.includes("자소서") && content.includes("삭제"))
-			deletePersonalStatement(msg, content, userHash);
-		else if (content.includes("포인트") && content.includes("사용"))
-			usePoint(mainRoom, msg, userHash);
+
 	}
 	catch (e)
 	{
@@ -764,7 +785,8 @@ function savePersonalStatement(msg, content, userHash)
 		{
 			'name': name,
 			'content': body,
-			'time': date(0) + " " + time()
+			'time': date(0) + " " + time(),
+			'flag': 1
 		});
 
 		msg.reply("자소서📜 저장 완료");
@@ -815,6 +837,60 @@ function deletePersonalStatement(msg, content, userHash)
 	msg.reply("자소서📜 삭제 완료");
 }
 
+function hiddenPersonalStatement(msg, content, userHash)
+{
+	if (checkAdmin(userHash) == false)
+		return;
+
+	fileCheck(personalStatementPath);
+
+	var name = content.replace(".자소서", "").split("가리기")[0].trim();
+
+	if (!name)
+		return;
+
+	var personalStatementList = JSON.parse(fs.read(personalStatementPath));
+	var i = personalStatementList.findIndex(n => n.name === name);
+
+	if (i > -1)
+		personalStatementList[i].flag = 0;
+
+	fs.write(personalStatementPath, JSON.stringify(personalStatementList));
+	msg.reply("자소서📜 가리기 완료");
+}
+
+function showPersonalStatement(msg, content, userHash)
+{
+	if (checkAdmin(userHash) == false)
+		return;
+
+	fileCheck(personalStatementPath);
+
+	var name = content.replace(".자소서", "").split("살리기")[0].trim();
+
+	if (!name)
+		return;
+
+	var personalStatementList = JSON.parse(fs.read(personalStatementPath));
+	var i = personalStatementList.findIndex(n => n.name === name);
+
+	if (i > -1)
+		personalStatementList[i].flag = 1;
+
+	fs.write(personalStatementPath, JSON.stringify(personalStatementList));
+	msg.reply("자소서📜 보이기 완료");
+}
+
+function addCurrentRoomUser(msg, roomId, userHash)
+{
+
+}
+
+function removeCurrentRoomUser(msg, roomId, userHash)
+{
+
+}
+
 function getPersonalStatement(msg, arg, roomId)
 {
 	try
@@ -827,6 +903,7 @@ function getPersonalStatement(msg, arg, roomId)
 			return;
 
 		var personalStatementList = JSON.parse(fs.read(personalStatementPath));
+		var reply = false;
 
 		if (roomId === mainRoom)
 		{
@@ -835,19 +912,33 @@ function getPersonalStatement(msg, arg, roomId)
 				msg.reply("이름이 이상혀서.. 소개를 못혀");
 				return;
 			}
-		}
 
-		var reply = false;
-
-		personalStatementList.forEach(e =>
-		{
-			if (e.name.includes(name))
+			personalStatementList.forEach(e =>
 			{
-				reply = true;
-				wait(1);
-				msg.reply("📜" + e.name + "의 자소서📜\n" + e.content + " \n⏰ 저장 시간 : " + e.time);
-			}
-		});
+				if (e.name.includes(name))
+				{
+					reply = true;
+					wait(1);
+					
+					if (!e.flag)
+						msg.reply("📜" + e.name + "의 자소서📜\n" + e.content + " \n⏰ 저장 시간 : " + e.time);
+					else if (e.flag === 1)
+						msg.reply("📜" + e.name + "의 자소서📜\n" + e.content + " \n⏰ 저장 시간 : " + e.time);
+				}
+			});
+		}
+		else
+		{
+			personalStatementList.forEach(e =>
+			{
+				if (e.name.includes(name))
+				{
+					reply = true;
+					wait(1);
+					msg.reply("📜" + e.name + "의 자소서📜\n" + e.content + " \n⏰ 저장 시간 : " + e.time);
+				}
+			});
+		}
 
 		if (reply === false)
 			msg.reply("아이고! 자소서📜를 못찾겠네~");
@@ -977,6 +1068,8 @@ function getAstroLogicalSign(msg, arg)
 {
 	try
 	{
+		arg = arg.replace("자리", "");
+		
 		var value = astroLogy[arg];
 
 		if (!value)
